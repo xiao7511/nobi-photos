@@ -1,5 +1,7 @@
 # 原生设备验收清单（Phase 4 更新）
 
+2026-10-21 补验：0.4.1 已在中兴 ZTE 7551N / Android 13 / WebView 101 上通过五页布局、返回键、键盘、主题、进程冷启动、最小化恢复和已有数据保留检查，修复旧 WebView 媒体查询兼容问题。同包在 Android 14 专用 AVD 重跑合成图库流程通过。范围与限制见 [真机报告](ANDROID-PHONE-VALIDATION.md)；真机未执行图库写入或撤权测试。
+
 2026-10-21 已在 Windows 上启动专用 `nobi_photos_test` Android 14 AOSP / API 34 模拟器，执行真实系统权限弹窗、MediaStore、WebView 与 SQLite 集成验证。只使用脚本生成的 101 张图片，不读取私人相册。此结果不代表其他系统、有限授权或物理设备通过。
 
 ## 已执行子集

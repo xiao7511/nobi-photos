@@ -125,6 +125,7 @@ Capacitor 桥接日志关闭，避免调试日志输出照片元数据或 SQL �
 代码已同步到 [GitHub](https://github.com/xiao7511/nobi-photos)。用户另外授权的云端新增业务基础库部署见 [腾讯云部署报告](docs/CLOUD-DEPLOYMENT.md) 与 [独立 Supabase Postgres 运维说明](deploy/supabase/README.md)。设备照片元数据仍在本地，尚未接入云端业务 API。
 
 - [Android APK 打包与联调验证](docs/ANDROID-PACKAGING-VALIDATION.md)
+- [Android 真机版面与独立运行环境（0.4.1）](docs/ANDROID-PHONE-VALIDATION.md)
 - [Phase 4 验收报告](docs/PHASE4-ACCEPTANCE.md)
 - [Phase 3 历史报告](docs/PHASE3-ACCEPTANCE.md)
 - [Phase 2 历史报告](docs/PHASE2-ACCEPTANCE.md)
