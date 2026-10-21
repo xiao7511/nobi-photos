@@ -62,15 +62,18 @@ jobs:
           xcrun simctl addmedia "$DEVICE" artifacts/ios-fixtures/*.png
       - name: Build native app and UI tests
         run: |
+          set -euo pipefail
           xcodebuild -project ios/App/App.xcodeproj -scheme Nobi -configuration Debug -destination "platform=iOS Simulator,id=$NOBI_SIM_UDID" -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build-for-testing | tee artifacts/ios-build.log
           ditto -c -k --keepParent ios/DerivedData/Build/Products/Debug-iphonesimulator/App.app artifacts/NOBI-Photos-ios-simulator.zip
           xcrun simctl install "$NOBI_SIM_UDID" ios/DerivedData/Build/Products/Debug-iphonesimulator/App.app
           xcrun simctl privacy "$NOBI_SIM_UDID" grant photos app.nobi.photos
       - name: Validate real PhotoKit, SQLite, Vision and app UI
         run: |
+          set -euo pipefail
           xcodebuild -project ios/App/App.xcodeproj -scheme Nobi -configuration Debug -destination "platform=iOS Simulator,id=$NOBI_SIM_UDID" -derivedDataPath ios/DerivedData -parallel-testing-enabled NO -resultBundlePath artifacts/ios-ui.xcresult CODE_SIGNING_ALLOWED=NO test-without-building | tee artifacts/ios-test.log
       - name: Archive unsigned arm64 device app
         run: |
+          set -euo pipefail
           xcodebuild -project ios/App/App.xcodeproj -scheme Nobi -configuration Release -destination 'generic/platform=iOS' -archivePath artifacts/NOBI-Photos.xcarchive CODE_SIGNING_ALLOWED=NO archive | tee artifacts/ios-device-build.log
           ditto -c -k --keepParent artifacts/NOBI-Photos.xcarchive artifacts/NOBI-Photos-ios-unsigned-archive.zip
       - uses: actions/upload-artifact@v4
