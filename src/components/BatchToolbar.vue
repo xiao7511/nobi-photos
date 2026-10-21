@@ -80,7 +80,7 @@ onUnmounted(() => dialog.value?.close())
       <button class="button primary" :disabled="!selectedIds.length || library.busy" @click="open">
         <Check :size="16" /> 整理所选照片
       </button>
-      <button class="button" :disabled="library.busy" @click="emit('exit')">
+      <button class="button" data-exit-selection :disabled="library.busy" @click="emit('exit')">
         <X :size="16" /> 退出选择
       </button>
       <small>每次最多 500 张 · 仅修改本地整理记录</small>

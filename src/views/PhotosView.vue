@@ -52,7 +52,7 @@ const groups = computed(() =>
 const { selecting, selectedIds, toggle, selectVisible, clear, exit } = usePhotoSelection(visible)
 </script>
 <template>
-  <section class="page-heading">
+  <section v-if="!library.isNative" class="page-heading">
     <div>
       <span class="eyebrow">YOUR LIFE, BEAUTIFULLY COLLECTED</span>
       <h1>把日子，存成喜欢的样子<span class="title-dot">.</span></h1>
@@ -62,8 +62,16 @@ const { selecting, selectedIds, toggle, selectVisible, clear, exit } = usePhotoS
       <Images :size="17" /> 连接本机相册 <ArrowUpRight :size="17" />
     </button>
   </section>
-  <div ref="connection"><LibraryConnection /></div>
-  <section class="memory-hero">
+  <div v-if="!library.isNative" ref="connection"><LibraryConnection /></div>
+  <div v-else class="native-library-status">
+    <span><LockKeyhole :size="15" /> 照片与整理记录保存在本机</span>
+    <RouterLink to="/privacy">管理相册 <ArrowUpRight :size="15" /></RouterLink>
+  </div>
+  <LibraryConnection
+    v-if="library.isNative && !library.loading && !library.photos.length"
+    compact
+  />
+  <section v-if="!library.isNative" class="memory-hero">
     <div class="hero-copy">
       <span class="hero-label"><Leaf :size="14" /> LITTLE THINGS, BIG MEMORIES</span>
       <h2>走慢一点，<br />美好一直都在。</h2>
@@ -88,7 +96,7 @@ const { selecting, selectedIds, toggle, selectVisible, clear, exit } = usePhotoS
   </section>
   <div class="library-toolbar">
     <div class="section-title">
-      <h2>我的照片</h2>
+      <h2>{{ library.isNative ? '全部回忆' : '我的照片' }}</h2>
       <span>{{ library.photos.length }} {{ library.isNative ? '张本机照片' : '个示例瞬间' }}</span>
     </div>
     <div class="toolbar-right">

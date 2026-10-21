@@ -61,7 +61,7 @@ function reset() {
 }
 </script>
 <template>
-  <section class="page-heading">
+  <section v-if="!library.isNative" class="page-heading">
     <div>
       <span class="eyebrow">FIND THE MOMENT YOU HAVE IN MIND</span>
       <h1>想起那一刻，就能找到<span class="title-dot">.</span></h1>

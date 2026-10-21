@@ -18,7 +18,7 @@ const reviewed = ref(false)
 const candidates = computed(() => library.photos.filter((p) => p.duplicateGroup))
 </script>
 <template>
-  <section class="page-heading">
+  <section v-if="!library.isNative" class="page-heading">
     <div>
       <span class="eyebrow">MORE ROOM FOR WHAT MATTERS</span>
       <h1>轻一点，装下更多美好<span class="title-dot">.</span></h1>
@@ -26,7 +26,7 @@ const candidates = computed(() => library.photos.filter((p) => p.duplicateGroup)
     </div>
     <span class="pill"><ShieldCheck :size="15" /> 自动删除已禁用</span>
   </section>
-  <section class="cleanup-hero">
+  <section v-if="!library.isNative" class="cleanup-hero">
     <div>
       <span class="eyebrow">A LITTLE BREATHING SPACE</span>
       <h2>给回忆，留一些呼吸感。</h2>

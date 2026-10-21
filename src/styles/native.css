@@ -1,0 +1,270 @@
+/* App shell uses native system-bar insets. No desktop sidebar at any orientation. */
+.native-app {
+  overscroll-behavior: none;
+}
+.native-app body {
+  min-width: 0;
+}
+.native-app .workspace {
+  margin-left: 0;
+}
+.native-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 60px;
+  padding: 0 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.native-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.native-title img {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+.native-title h1 {
+  font-size: 20px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.native-local-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  min-height: 44px;
+}
+.native-app .icon-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.native-app main {
+  max-width: 900px;
+  padding: 18px 16px 96px;
+}
+.native-app .mobile-nav {
+  display: flex;
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 30;
+  justify-content: space-around;
+  height: 72px;
+  padding: 6px 8px 8px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+.native-app .mobile-nav a {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  border-radius: 12px;
+}
+.native-app .mobile-nav a.active {
+  background: var(--green-soft);
+  color: var(--green);
+}
+.native-app .button {
+  min-height: 44px;
+  font-size: 12px;
+}
+.native-library-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: -4px 0 18px;
+  padding: 8px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.native-library-status > span,
+.native-library-status > a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.native-library-status > a {
+  min-height: 36px;
+  color: var(--green);
+  white-space: nowrap;
+}
+.native-app .page-heading {
+  gap: 12px;
+  margin-bottom: 18px;
+  align-items: center;
+}
+.native-app .page-heading p {
+  font-size: 12px;
+}
+.native-app .page-heading > .button {
+  margin: 0;
+}
+.native-app .library-toolbar {
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.native-app .section-title h2 {
+  font-size: 17px;
+}
+.native-app .section-title > span {
+  font-size: 11px;
+}
+.native-app .filter-row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.native-app .filter {
+  flex-shrink: 0;
+  min-height: 40px;
+}
+.native-app .sort-label {
+  display: flex;
+}
+.native-app .batch-toolbar {
+  margin: 12px 0 18px;
+}
+.native-app .photo-grid {
+  columns: 3;
+  column-gap: 4px;
+}
+.native-app .photo-grid.compact {
+  columns: 4;
+}
+.native-app .photo-card {
+  border-radius: 5px;
+  margin-bottom: 4px;
+}
+.native-app .photo-open > img {
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.native-app .photo-caption {
+  display: none;
+}
+.native-app .favorite-button {
+  width: 30px;
+  height: 30px;
+  min-height: 0;
+  right: 4px;
+  top: 4px;
+}
+.native-app .date-heading {
+  margin-top: 20px;
+}
+.native-app .privacy-strip {
+  margin-top: 24px;
+}
+.native-app .search-panel {
+  padding: 20px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.native-app .sparkle-emblem,
+.native-app .suggestions {
+  display: none;
+}
+.native-app .search-panel > h2 {
+  font-size: 20px;
+  letter-spacing: 0;
+}
+.native-app .search-panel > p {
+  font-size: 12px;
+  margin-top: 8px;
+}
+.native-app .search-box {
+  margin: 18px 0 0;
+  padding: 8px;
+  gap: 8px;
+  box-shadow: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.native-app .search-box input {
+  font-size: 14px;
+}
+.native-app .search-box .button {
+  padding-inline: 12px;
+}
+.native-app .search-box .button svg {
+  display: none;
+}
+.native-app .search-privacy {
+  line-height: 1.8;
+  align-items: flex-start;
+}
+.native-app .connection-panel {
+  padding: 18px 16px;
+  margin: 0 0 18px;
+}
+.native-app .connection-heading h2 {
+  font-size: 16px;
+}
+.native-app .connection-heading p {
+  font-size: 12px;
+}
+.native-app .profile-card {
+  padding: 22px 18px;
+}
+.native-app .profile-card .eyebrow {
+  display: none;
+}
+.native-app .profile-card h2 {
+  font-size: 18px;
+}
+.native-app .settings-card {
+  padding: 20px 16px;
+}
+.native-app .theme-options > button {
+  min-height: 80px;
+  padding: 16px 6px;
+}
+.native-app .about-note {
+  margin-top: 26px;
+}
+.native-app dialog {
+  max-height: 85vh;
+  max-height: 85dvh;
+  width: min(94vw, 680px);
+}
+.native-app .photo-dialog[open] {
+  grid-template-columns: 1fr;
+}
+.native-app .photo-dialog > img {
+  max-height: 42vh;
+  max-height: 42dvh;
+  object-fit: contain;
+}
+.native-app .toast {
+  left: 50%;
+  bottom: 88px;
+  max-width: calc(100vw - 24px);
+}
+@media (min-width: 680px) {
+  .native-app .photo-grid {
+    columns: 5;
+  }
+  .native-app .photo-grid.compact {
+    columns: 6;
+  }
+}

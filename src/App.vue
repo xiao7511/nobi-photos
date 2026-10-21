@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   Images,
   LayoutGrid,
@@ -15,17 +15,21 @@ import {
   X,
   WifiOff,
   PanelLeftClose,
+  ArrowLeft,
 } from '@lucide/vue'
 import { useLibrary } from './stores/library'
 import { usePreferences } from './stores/preferences'
 import { useDeviceLibrary } from './stores/deviceLibrary'
 import { hasAccess } from './native/contracts'
-import type { PluginListenerHandle } from '@capacitor/core'
+import { Capacitor, SystemBars, SystemBarsStyle, type PluginListenerHandle } from '@capacitor/core'
+import { handleNativeBack } from './native/navigation'
 const route = useRoute()
+const router = useRouter()
 const library = useLibrary()
 const preferences = usePreferences()
 const device = useDeviceLibrary()
 let lifecycle: PluginListenerHandle | undefined
+let backButton: PluginListenerHandle | undefined
 let disposed = false
 let resuming = false
 let refreshAgain = false
@@ -71,6 +75,13 @@ watch(
   dark,
   (value) => {
     document.documentElement.dataset.theme = value ? 'dark' : 'light'
+    if (library.isNative) {
+      void SystemBars.setStyle({
+        style: value ? SystemBarsStyle.Dark : SystemBarsStyle.Light,
+      }).catch(() => {
+        /* System appearance must not block the local photo library. */
+      })
+    }
   },
   { immediate: true },
 )
@@ -87,8 +98,14 @@ onMounted(() => {
             void refreshNative()
           } else library.suspend()
         })
+        if (Capacitor.getPlatform() === 'android') {
+          backButton = await App.addListener('backButton', () => {
+            void handleNativeBack(router, () => App.minimizeApp())
+          })
+        }
         if (disposed) {
           await lifecycle.remove()
+          await backButton?.remove()
           return
         }
         await refreshNative()
@@ -104,6 +121,7 @@ onMounted(() => {
 onUnmounted(() => {
   disposed = true
   void lifecycle?.remove()
+  void backButton?.remove()
   if (library.isNative) library.suspend()
   media.removeEventListener('change', onTheme)
   window.removeEventListener('online', onNetwork)
@@ -113,7 +131,7 @@ onUnmounted(() => {
 
 <template>
   <a class="skip-link" href="#main">跳转到内容</a>
-  <aside class="sidebar">
+  <aside v-if="!library.isNative" class="sidebar">
     <RouterLink to="/" class="brand" aria-label="NOBI Photos 首页">
       <img src="/favicon.svg" alt="" /><span>NOBI<span class="brand-sub">PHOTOS</span></span>
     </RouterLink>
@@ -148,7 +166,36 @@ onUnmounted(() => {
     </div>
   </aside>
   <div class="workspace">
-    <header class="topbar">
+    <header v-if="library.isNative" class="native-topbar">
+      <div class="native-title">
+        <button
+          v-if="route.path === '/privacy'"
+          class="icon-button"
+          aria-label="返回我的"
+          @click="router.replace('/profile')"
+        >
+          <ArrowLeft :size="22" />
+        </button>
+        <img v-else src="/favicon.svg" alt="" />
+        <h1>{{ route.meta.title }}</h1>
+      </div>
+      <RouterLink
+        v-if="route.path !== '/privacy'"
+        to="/privacy"
+        class="native-local-status"
+        aria-label="隐私与安全中心"
+      >
+        <ShieldCheck :size="15" />仅本机
+      </RouterLink>
+      <button
+        class="icon-button"
+        :aria-label="dark ? '切换浅色模式' : '切换深色模式'"
+        @click="preferences.setTheme(dark ? 'light' : 'dark')"
+      >
+        <Sun v-if="dark" :size="21" /><Moon v-else :size="21" />
+      </button>
+    </header>
+    <header v-else class="topbar">
       <div class="breadcrumb">
         <PanelLeftClose :size="18" /><span>我的空间</span><span class="separator">/</span
         ><strong>{{ route.meta.title }}</strong>
@@ -165,14 +212,14 @@ onUnmounted(() => {
       </div>
     </header>
     <main id="main" tabindex="-1">
-      <div v-if="offline" class="banner">
+      <div v-if="offline && !library.isNative" class="banner">
         <WifiOff :size="17" /> 当前离线 · 已缓存的相册功能仍可使用
       </div>
       <div v-if="library.error || preferences.error" class="banner error" role="alert">
         {{ library.error || preferences.error }} <RouterLink to="/privacy">前往隐私中心</RouterLink>
       </div>
       <RouterView />
-      <footer class="page-footer">
+      <footer v-if="!library.isNative" class="page-footer">
         <span>NOBI PHOTOS</span><span>每一刻，都值得被好好珍藏。</span><ShieldCheck :size="14" />
       </footer>
     </main>

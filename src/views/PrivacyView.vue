@@ -57,8 +57,10 @@ const policies = [
 ]
 </script>
 <template>
-  <RouterLink to="/profile" class="back-link"><ArrowLeft :size="17" /> 返回我的空间</RouterLink>
-  <section class="page-heading">
+  <RouterLink v-if="!library.isNative" to="/profile" class="back-link"
+    ><ArrowLeft :size="17" /> 返回我的空间</RouterLink
+  >
+  <section v-if="!library.isNative" class="page-heading">
     <div>
       <span class="eyebrow">PRIVATE BY DESIGN</span>
       <h1>安心，是最好的底色<span class="title-dot">.</span></h1>

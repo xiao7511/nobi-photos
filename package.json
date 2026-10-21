@@ -1,6 +1,6 @@
 {
   "name": "nobi-photos",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "NOBI Photos: offline batch organization and combined search, Phase 4",
   "scripts": {
@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:native": "node scripts/native-smoke.mjs",
+    "test:phone": "node scripts/phone-smoke.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "cap:check": "node scripts/check-capacitor.mjs",

@@ -3,6 +3,9 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // Capacitor runs against the device's WebView, not the desktop browser.
+  // The test phone has Chromium 101; preserve legacy media query syntax.
+  build: { target: ['chrome100', 'safari15'], cssTarget: ['chrome100', 'safari15'] },
   plugins: [
     vue(),
     VitePWA({

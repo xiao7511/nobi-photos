@@ -21,7 +21,7 @@ const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
 ]
 </script>
 <template>
-  <section class="page-heading">
+  <section v-if="!library.isNative" class="page-heading">
     <div>
       <span class="eyebrow">MAKE YOURSELF AT HOME</span>
       <h1>你的回忆，你的空间<span class="title-dot">.</span></h1>
@@ -73,6 +73,6 @@ const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
   <div class="about-note">
     <img src="/favicon.svg" alt="" /><strong>NOBI Photos</strong>
     <p>照片留在本地，回忆自在生长。</p>
-    <span>v0.4.0 · Phase 4 · {{ library.isNative ? '本机相册' : '浏览器示例预览' }}</span>
+    <span>v0.4.1 · {{ library.isNative ? 'Android / iOS 本地应用' : '浏览器示例预览' }}</span>
   </div>
 </template>

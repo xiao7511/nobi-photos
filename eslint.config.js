@@ -18,8 +18,18 @@ export default ts.config(
   ...vue.configs['flat/recommended'],
   // These globals occur only inside functions evaluated in the Android WebView.
   {
-    files: ['scripts/native-smoke.mjs'],
-    languageOptions: { globals: { document: 'readonly', location: 'readonly' } },
+    files: ['scripts/native-smoke.mjs', 'scripts/phone-smoke.mjs'],
+    languageOptions: {
+      globals: {
+        document: 'readonly',
+        location: 'readonly',
+        Element: 'readonly',
+        getComputedStyle: 'readonly',
+        innerWidth: 'readonly',
+        innerHeight: 'readonly',
+        localStorage: 'readonly',
+      },
+    },
   },
   {
     files: ['**/*.vue'],

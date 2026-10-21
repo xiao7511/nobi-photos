@@ -4,6 +4,7 @@ import { ShieldCheck, ScanLine, X, Square, Settings, Images } from '@lucide/vue'
 import { useDeviceLibrary } from '../stores/deviceLibrary'
 import { useLibrary } from '../stores/library'
 import { hasAccess } from '../native/contracts'
+withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
 const device = useDeviceLibrary()
 const library = useLibrary()
 const consent = ref<HTMLDialogElement>()
@@ -95,7 +96,7 @@ onUnmounted(() => consent.value?.close())
           <Square :size="15" />{{ device.scan.status === 'cancelling' ? '正在取消…' : '取消扫描' }}
         </button>
       </div>
-      <label class="autoscan-toggle"
+      <label v-if="!compact" class="autoscan-toggle"
         ><input
           type="checkbox"
           :checked="device.autoScan"
@@ -117,13 +118,13 @@ onUnmounted(() => consent.value?.close())
       <p v-else-if="device.scan.status === 'cancelled'" class="body-text" role="status">
         扫描已取消，上一次完整索引保持不变。
       </p>
-      <p v-else-if="device.lastScanAt" class="body-text">
+      <p v-else-if="device.lastScanAt && !compact" class="body-text">
         上次完整扫描：{{ new Date(device.lastScanAt).toLocaleString('zh-CN') }}
       </p>
       <p v-if="device.error || operationError" class="banner error" role="alert">
         {{ device.error || operationError }}
       </p>
-      <p class="fine-print">
+      <p v-if="!compact" class="fine-print">
         只索引照片。iCloud 中未在本地的缩略图可能不可用；不会为预览主动下载原图。
       </p>
     </template>

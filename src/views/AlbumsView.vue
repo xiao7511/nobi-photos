@@ -52,9 +52,12 @@ const visible = computed(() =>
 <template>
   <section class="page-heading">
     <div>
-      <span class="eyebrow">A PLACE FOR EVERY MEMORY</span>
-      <h1>喜欢的事物，自成一集<span class="title-dot">.</span></h1>
-      <p>把散落的瞬间，整理成生活的章节。</p>
+      <template v-if="!library.isNative">
+        <span class="eyebrow">A PLACE FOR EVERY MEMORY</span>
+        <h1>喜欢的事物，自成一集<span class="title-dot">.</span></h1>
+        <p>把散落的瞬间，整理成生活的章节。</p>
+      </template>
+      <p v-else>用相册整理你的回忆，仅在本机保存。</p>
     </div>
     <button class="button primary" @click="editor?.open()"><Plus :size="17" /> 新建相册</button>
   </section>
