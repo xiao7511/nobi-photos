@@ -9,6 +9,67 @@
   height: 340px;
   margin-bottom: 31px;
 }
+.connection-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 25px;
+}
+.connection-heading {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  color: var(--green);
+}
+.connection-heading h2 {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 16px;
+}
+.connection-heading p {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 9px;
+}
+.autoscan-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 20px 0;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.autoscan-toggle input {
+  accent-color: var(--green);
+  width: 18px;
+  height: 18px;
+}
+.autoscan-toggle small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 5px;
+}
+.scan-progress {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 11px;
+  margin: 20px 0;
+}
+.scan-progress progress {
+  accent-color: var(--green);
+  height: 8px;
+  min-width: 150px;
+  flex: 1;
+}
+.connection-panel .fine-print {
+  line-height: 1.8;
+}
 .hero-copy {
   padding: 31px 35px;
   z-index: 1;

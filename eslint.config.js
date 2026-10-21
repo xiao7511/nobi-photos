@@ -9,6 +9,8 @@ export default ts.config(
       'coverage/**',
       'test-results/**',
       'playwright-report/**',
+      'android/**',
+      'ios/**',
     ],
   },
   js.configs.recommended,

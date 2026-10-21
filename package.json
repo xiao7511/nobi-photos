@@ -1,8 +1,8 @@
 {
   "name": "nobi-photos",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "NOBI Photos: privacy-first offline photo album, Phase 1",
+  "description": "NOBI Photos: privacy-first offline photo album, Phase 2",
   "scripts": {
     "dev": "vite",
     "lint": "eslint . --max-warnings 0",
@@ -12,6 +12,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "cap:check": "node scripts/check-capacitor.mjs",
+    "cap:sync": "cap sync",
+    "android:debug": "cd android && gradlew.bat assembleDebug",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "art:generate": "node scripts/generate-demo.mjs"
@@ -30,8 +32,13 @@
     "npm": ">=11"
   },
   "dependencies": {
+    "@capacitor-community/sqlite": "^8.1.1",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
     "@lucide/vue": "^1.60.0",
+    "@nobi/photo-library": "file:plugins/photo-library",
     "pinia": "^4.1.0",
     "vue": "^3.5.44",
     "vue-router": "^5.4.0"

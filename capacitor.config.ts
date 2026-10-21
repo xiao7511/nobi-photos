@@ -4,6 +4,12 @@ const config: CapacitorConfig = {
   appName: 'NOBI Photos',
   webDir: 'dist',
   server: { androidScheme: 'https' },
-  // Phase 1: no camera, filesystem, media-library or network plugins.
+  plugins: {
+    CapacitorSQLite: {
+      iosDatabaseLocation: 'Library/NoCloud',
+      iosIsEncryption: false,
+      androidIsEncryption: false,
+    },
+  },
 }
 export default config

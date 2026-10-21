@@ -20,7 +20,13 @@ const candidates = computed(() => library.photos.filter((p) => p.duplicateGroup)
     <div>
       <span class="eyebrow">A LITTLE BREATHING SPACE</span>
       <h2>给回忆，留一些呼吸感。</h2>
-      <p>这里只展示预设的示例相似组。<br />未扫描设备，未计算实际可释放空间。</p>
+      <p>
+        {{
+          library.isNative
+            ? '本阶段仅建立照片索引，尚未进行相似度分析。'
+            : '这里只展示预设的示例相似组，未扫描设备。'
+        }}<br />未计算实际可释放空间。
+      </p>
       <div class="chips">
         <span class="chip">无后台扫描</span><span class="chip">无自动删除</span
         ><span class="chip">原图不变</span>
@@ -31,9 +37,14 @@ const candidates = computed(() => library.photos.filter((p) => p.duplicateGroup)
   <div class="cleanup-stats">
     <div>
       <Copy :size="23" /><strong>{{ candidates.length }}</strong
-      ><span>示例相似照片</span>
+      ><span>{{ library.isNative ? '相似度分析尚未接入' : '示例相似照片' }}</span>
     </div>
-    <div><ScanLine :size="23" /><strong>未开启</strong><span>本机照片扫描</span></div>
+    <div>
+      <ScanLine :size="23" /><strong>{{
+        library.isNative ? library.photos.length : '未开启'
+      }}</strong
+      ><span>{{ library.isNative ? '本机已索引照片' : '本机照片扫描' }}</span>
+    </div>
     <div><ShieldCheck :size="23" /><strong>0 张</strong><span>已删除的原始照片</span></div>
   </div>
   <section class="spaced">

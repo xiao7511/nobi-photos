@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
+      injectRegister: false,
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'art/*.svg'],
       manifest: {

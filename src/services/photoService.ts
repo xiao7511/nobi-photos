@@ -2,7 +2,9 @@ import type { Photo, PhotoManagementService, PhotoQuery, PhotoRepository } from 
 export function filterPhotos(photos: Photo[], query: PhotoQuery = {}): Photo[] {
   const terms = (query.text ?? '').trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
   return photos.filter((p) => {
-    const haystack = [p.title, p.category, p.location, ...p.tags].join(' ').toLocaleLowerCase()
+    const haystack = [p.title, p.category, p.location, p.takenAt, ...p.tags]
+      .join(' ')
+      .toLocaleLowerCase()
     return (
       (!query.category || p.category === query.category) &&
       (!query.favoritesOnly || p.favorite) &&
@@ -22,10 +24,10 @@ export class LocalPhotoService implements PhotoManagementService {
     return (await this.repository.list()).filter((p) => p.duplicateGroup)
   }
   async requestLibraryAccess(): Promise<never> {
-    throw new Error('Phase 1 未接入系统相册，请等待 Phase 2 验收后开发。')
+    throw new Error('浏览器不支持系统相册授权，请使用 Phase 2 原生应用。')
   }
   async deleteOriginals(ids: string[]): Promise<never> {
     void ids
-    throw new Error('Phase 1 不支持删除原始照片。')
+    throw new Error('本应用不支持删除原始照片。')
   }
 }

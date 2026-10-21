@@ -1,4 +1,4 @@
-export type Category = '自然' | '旅行' | '生活' | '建筑'
+export type Category = '自然' | '旅行' | '生活' | '建筑' | '未分类'
 export type Theme = 'system' | 'light' | 'dark'
 export interface Photo {
   id: string
@@ -12,7 +12,10 @@ export interface Photo {
   width: number
   height: number
   bytes: number
-  source: 'demo'
+  source: 'demo' | 'device'
+  assetId?: string
+  modifiedAt?: string
+  bytesKnown?: boolean
   duplicateGroup?: string
 }
 export interface PhotoQuery {
@@ -38,6 +41,6 @@ export const PRIVACY_POLICY = Object.freeze({
   cloudAI: false,
   automaticDeletion: false,
   analytics: false,
-  nativeLibraryAccess: false,
+  automaticLibraryAccess: false,
   registrationRequired: false,
 })

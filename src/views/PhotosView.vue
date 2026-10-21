@@ -11,13 +11,25 @@ import {
   LockKeyhole,
 } from '@lucide/vue'
 import PhotoGrid from '../components/PhotoGrid.vue'
+import LibraryConnection from '../components/LibraryConnection.vue'
 import { useLibrary } from '../stores/library'
 import type { Category } from '../domain/models'
 const library = useLibrary()
 const filter = ref('全部照片')
 const order = ref('newest')
 const compact = ref(false)
-const filters = ['全部照片', '我的收藏', '自然', '旅行', '生活', '建筑']
+const filters = computed(() =>
+  library.isNative
+    ? ['全部照片', '我的收藏', '未分类']
+    : ['全部照片', '我的收藏', '自然', '旅行', '生活', '建筑'],
+)
+const connection = ref<HTMLElement>()
+function connect() {
+  if (library.isNative) connection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  else
+    library.notice =
+      'Phase 2 原生照片读取已实现；浏览器不请求系统相册权限，请使用 Android / iOS 应用。'
+}
 const visible = computed(() =>
   library.photos
     .filter(
@@ -45,13 +57,11 @@ const groups = computed(() =>
       <h1>把日子，存成喜欢的样子<span class="title-dot">.</span></h1>
       <p>那些平凡又闪光的瞬间，都在这里。</p>
     </div>
-    <button
-      class="button primary"
-      @click="library.notice = '原生照片读取将在 Phase 2 验收后开发；当前仅展示本地示例插画。'"
-    >
+    <button class="button primary" @click="connect">
       <Images :size="17" /> 连接本机相册 <ArrowUpRight :size="17" />
     </button>
   </section>
+  <div ref="connection"><LibraryConnection /></div>
   <section class="memory-hero">
     <div class="hero-copy">
       <span class="hero-label"><Leaf :size="14" /> LITTLE THINGS, BIG MEMORIES</span>
@@ -78,10 +88,10 @@ const groups = computed(() =>
   <div class="library-toolbar">
     <div class="section-title">
       <h2>我的照片</h2>
-      <span>{{ library.photos.length }} 个示例瞬间</span>
+      <span>{{ library.photos.length }} {{ library.isNative ? '张本机照片' : '个示例瞬间' }}</span>
     </div>
     <div class="toolbar-right">
-      <span class="demo-badge">示例相册</span
+      <span class="demo-badge">{{ library.isNative ? '本机索引' : '示例相册' }}</span
       ><label class="sort-label"
         ><SlidersHorizontal :size="15" /><select v-model="order" aria-label="照片排序">
           <option value="newest">最新优先</option>

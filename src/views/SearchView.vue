@@ -29,7 +29,11 @@ async function search(term = query.value) {
   <section class="search-panel">
     <div class="sparkle-emblem"><Sparkles :size="31" /></div>
     <h2>找回脑海里的小美好</h2>
-    <p>Phase 1 使用本地示例标签匹配。端侧语义 AI 尚未接入。</p>
+    <p>
+      {{
+        library.isNative ? '按本机照片标题与日期关键词匹配。' : '浏览器使用本地示例标签匹配。'
+      }}端侧语义 AI 尚未接入。
+    </p>
     <form class="search-box" @submit.prevent="search()">
       <Search :size="21" /><input
         v-model="query"

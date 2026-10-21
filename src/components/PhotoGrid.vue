@@ -3,6 +3,7 @@ import { Heart, Images, X, MapPin, ShieldCheck } from '@lucide/vue'
 import { nextTick, onUnmounted, ref, watch } from 'vue'
 import type { Photo } from '../domain/models'
 import { useLibrary } from '../stores/library'
+import PhotoThumbnail from './PhotoThumbnail.vue'
 withDefaults(defineProps<{ photos: Photo[]; compact?: boolean }>(), { compact: false })
 const library = useLibrary()
 const selected = ref<Photo | null>(null)
@@ -31,12 +32,7 @@ onUnmounted(() => dialog.value?.close())
   <div v-if="photos.length" :class="['photo-grid', { compact }]">
     <article v-for="photo in photos" :key="photo.id" class="photo-card">
       <button class="photo-open" :aria-label="`查看${photo.title}`" @click="open(photo, $event)">
-        <img
-          :src="photo.thumbnail"
-          :alt="photo.title"
-          :style="{ aspectRatio: `${photo.width}/${photo.height}` }"
-          loading="lazy"
-        />
+        <PhotoThumbnail :photo="photo" />
         <div class="photo-caption">
           <span>{{ photo.title }}</span
           ><small>{{ photo.location }}</small>
@@ -56,8 +52,16 @@ onUnmounted(() => dialog.value?.close())
   <div v-else class="empty-state">
     <Images :size="42" />
     <h3>留一点空间，给新的回忆</h3>
-    <p>暂无匹配的照片，试试其他筛选条件。</p>
-    <RouterLink to="/privacy" class="text-link">管理或恢复示例相册 →</RouterLink>
+    <p>
+      {{
+        library.isNative
+          ? '暂无匹配照片；可连接相册、扫描或更换筛选条件。'
+          : '暂无匹配的照片，试试其他筛选条件。'
+      }}
+    </p>
+    <RouterLink to="/privacy" class="text-link">{{
+      library.isNative ? '管理本机相册与权限 →' : '管理或恢复示例相册 →'
+    }}</RouterLink>
   </div>
   <dialog
     ref="dialog"
@@ -73,7 +77,7 @@ onUnmounted(() => dialog.value?.close())
     <template v-if="selected">
       <button class="dialog-close icon-button" aria-label="关闭照片详情" @click="close">
         <X /></button
-      ><img :src="selected.thumbnail" :alt="selected.title" />
+      ><PhotoThumbnail :photo="selected" detail />
       <div class="dialog-info">
         <span class="eyebrow">A LITTLE MOMENT</span>
         <h2>{{ selected.title }}</h2>
@@ -91,7 +95,14 @@ onUnmounted(() => dialog.value?.close())
             library.photos.find((p) => p.id === selected?.id)?.favorite ? '取消收藏' : '收藏这一刻'
           }}
         </button>
-        <p class="fine-print"><ShieldCheck :size="14" /> 本地示例插画 · 未读取系统照片</p>
+        <p class="fine-print">
+          <ShieldCheck :size="14" />
+          {{
+            selected.source === 'device'
+              ? '本机缩略预览 · 原图未修改'
+              : '本地示例插画 · 未读取系统照片'
+          }}
+        </p>
       </div>
     </template>
   </dialog>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NOBI Photos</string>
+    <string name="title_activity_main">NOBI Photos</string>
+    <string name="package_name">app.nobi.photos</string>
+    <string name="custom_url_scheme">app.nobi.photos</string>
+</resources>

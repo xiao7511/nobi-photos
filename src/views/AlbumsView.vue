@@ -3,14 +3,17 @@ import { computed, ref } from 'vue'
 import { ArrowUpRight, FolderHeart, X } from '@lucide/vue'
 import { useLibrary } from '../stores/library'
 import PhotoGrid from '../components/PhotoGrid.vue'
+import PhotoThumbnail from '../components/PhotoThumbnail.vue'
 import type { Category } from '../domain/models'
 const library = useLibrary()
 const selected = ref<Category | '收藏' | null>(null)
 const albums = computed(() =>
-  (['自然', '旅行', '生活', '建筑'] as Category[]).map((name) => ({
-    name,
-    photos: library.photos.filter((p) => p.category === name),
-  })),
+  ((library.isNative ? ['未分类'] : ['自然', '旅行', '生活', '建筑']) as Category[]).map(
+    (name) => ({
+      name,
+      photos: library.photos.filter((p) => p.category === name),
+    }),
+  ),
 )
 const visible = computed(() =>
   selected.value === '收藏'
@@ -25,7 +28,7 @@ const visible = computed(() =>
       <h1>喜欢的事物，自成一集<span class="title-dot">.</span></h1>
       <p>把散落的瞬间，整理成生活的章节。</p>
     </div>
-    <span class="pill">本地示例分类</span>
+    <span class="pill">{{ library.isNative ? '本机照片分类' : '本地示例分类' }}</span>
   </section>
   <div class="feature-panel soft">
     <FolderHeart :size="35" />
@@ -36,8 +39,8 @@ const visible = computed(() =>
     <button class="button" @click="selected = '收藏'">打开收藏 <ArrowUpRight :size="17" /></button>
   </div>
   <div class="section-title spaced">
-    <h2>生活的四个切面</h2>
-    <span>按示例标签整理</span>
+    <h2>{{ library.isNative ? '本机照片' : '生活的四个切面' }}</h2>
+    <span>{{ library.isNative ? '尚未进行 AI 分类' : '按示例标签整理' }}</span>
   </div>
   <div class="album-grid">
     <button
@@ -46,7 +49,7 @@ const visible = computed(() =>
       class="album-card"
       @click="selected = album.name"
     >
-      <img v-if="album.photos[0]" :src="album.photos[0].thumbnail" :alt="`${album.name}封面`" />
+      <PhotoThumbnail v-if="album.photos[0]" :photo="album.photos[0]" />
       <div v-else class="album-placeholder"></div>
       <div>
         <span

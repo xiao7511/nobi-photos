@@ -11,6 +11,7 @@ import {
   X,
 } from '@lucide/vue'
 import { useLibrary } from '../stores/library'
+import LibraryConnection from '../components/LibraryConnection.vue'
 const library = useLibrary()
 const confirmDialog = ref<HTMLDialogElement>()
 const action = ref<'clear' | 'restore'>('clear')
@@ -37,9 +38,9 @@ const policies = [
   },
   {
     icon: LockKeyhole,
-    title: '系统相册未授权',
-    body: 'Phase 1 不请求照片、相机或文件权限，也不进行后台扫描。',
-    state: '未请求',
+    title: '相册权限由你决定',
+    body: '仅在原生端经系统授权读取照片，支持有限访问。不申请相机或位置权限；自动扫描默认关闭，仅在前台运行。',
+    state: '按需授权',
   },
   {
     icon: Trash2,
@@ -69,9 +70,16 @@ const policies = [
     <ShieldCheck :size="26" />
     <div>
       <h2>你的照片，只属于你</h2>
-      <p>目前使用随应用打包的示例插画。未读取任何真实照片，未连接任何生产数据库。</p>
+      <p>
+        {{
+          library.isNative
+            ? '仅索引系统授权的照片与本地缩略图，照片不上传。未连接任何生产数据库。'
+            : '浏览器使用随应用打包的示例插画。未读取任何真实照片，未连接任何生产数据库。'
+        }}
+      </p>
     </div>
   </div>
+  <LibraryConnection />
   <div class="policy-list">
     <article v-for="policy in policies" :key="policy.title">
       <component :is="policy.icon" :size="23" />
@@ -85,18 +93,29 @@ const policies = [
   <section class="settings-card">
     <h2>本地数据与安全说明</h2>
     <p class="body-text">
-      当前仅在浏览器 localStorage
-      保存示例照片的收藏记录与外观偏好；离线缓存保存应用代码和示例插画。元数据未加密，不构成私密保险箱。共用设备时请使用系统锁屏。
+      {{
+        library.isNative
+          ? '原生端在本地 SQLite 保存照片标识、日期、尺寸、标题和收藏；照片原图不写入数据库。缩略图按需读取并仅保存在界面内存中；Android 文件大小可用时记录，iOS 不读取原图文件大小。'
+          : '浏览器仅在 localStorage 保存示例照片的收藏记录与外观偏好；离线缓存保存应用代码和示例插画。'
+      }}元数据未启用应用层加密，不构成私密保险箱。共用设备时请使用系统锁屏。
     </p>
     <p class="body-text">
-      清除示例记录不会移除外观偏好或应用缓存。若要彻底移除此站点的数据，请在浏览器的站点设置中清除存储与离线缓存。SQLite
-      结构已准备好，原生数据库驱动将在后续阶段接入。
+      {{
+        library.isNative
+          ? '清除本地索引会清除照片元数据、收藏、扫描记录并关闭自动扫描；不会删除原图或撤销系统权限。可通过系统设置撤销权限。原生数据库配置为不参与应用备份。'
+          : '清除示例记录不会移除外观偏好或应用缓存。若要彻底移除此站点的数据，请在浏览器的站点设置中清除存储与离线缓存。原生端使用独立 SQLite 索引，不与浏览器示例混合。'
+      }}
     </p>
     <div class="data-actions">
-      <button class="button" :disabled="library.busy" @click="ask('restore', $event)">
+      <button
+        v-if="!library.isNative"
+        class="button"
+        :disabled="library.busy"
+        @click="ask('restore', $event)"
+      >
         <RefreshCw :size="16" /> 恢复示例相册</button
       ><button class="button danger" :disabled="library.busy" @click="ask('clear', $event)">
-        <Trash2 :size="16" /> 清除本地示例记录
+        <Trash2 :size="16" /> {{ library.isNative ? '清除本地照片索引' : '清除本地示例记录' }}
       </button>
     </div>
   </section>
@@ -109,12 +128,22 @@ const policies = [
     <button class="dialog-close icon-button" aria-label="关闭确认" @click="close">
       <X :size="20" /></button
     ><ShieldCheck :size="32" />
-    <h2 id="confirm-title">{{ action === 'clear' ? '清除本地示例记录？' : '恢复示例相册？' }}</h2>
+    <h2 id="confirm-title">
+      {{
+        library.isNative
+          ? '清除本地照片索引？'
+          : action === 'clear'
+            ? '清除本地示例记录？'
+            : '恢复示例相册？'
+      }}
+    </h2>
     <p>
       {{
-        action === 'clear'
-          ? '将清除示例收藏并隐藏示例相册。不会访问或删除设备照片，可随时恢复示例。'
-          : '将重置示例收藏，恢复 12 张示例插画。不会读取设备照片。'
+        library.isNative
+          ? '将清除本地照片索引及收藏并关闭自动扫描。系统照片不会被删除，系统照片授权不会被撤销。请先取消正在进行的扫描。'
+          : action === 'clear'
+            ? '将清除示例收藏并隐藏示例相册。不会访问或删除设备照片，可随时恢复示例。'
+            : '将重置示例收藏，恢复 12 张示例插画。不会读取设备照片。'
       }}
     </p>
     <div class="data-actions">

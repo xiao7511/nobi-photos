@@ -18,9 +18,36 @@ import {
 } from '@lucide/vue'
 import { useLibrary } from './stores/library'
 import { usePreferences } from './stores/preferences'
+import { useDeviceLibrary } from './stores/deviceLibrary'
+import { hasAccess } from './native/contracts'
+import type { PluginListenerHandle } from '@capacitor/core'
 const route = useRoute()
 const library = useLibrary()
 const preferences = usePreferences()
+const device = useDeviceLibrary()
+let lifecycle: PluginListenerHandle | undefined
+let disposed = false
+let resuming = false
+let refreshAgain = false
+let appActive = true
+async function refreshNative() {
+  if (resuming) {
+    refreshAgain = true
+    return
+  }
+  if (!appActive || device.requesting || device.scanning) return
+  resuming = true
+  try {
+    await library.load()
+    if (device.autoScan && hasAccess(device.access)) await library.scanDevice()
+  } finally {
+    resuming = false
+    if (refreshAgain && appActive) {
+      refreshAgain = false
+      void refreshNative()
+    }
+  }
+}
 const systemDark = ref(false)
 const offline = ref(!navigator.onLine)
 const dark = computed(
@@ -50,12 +77,34 @@ watch(
 onMounted(() => {
   preferences.initialize()
   onTheme()
-  void library.load()
+  if (library.isNative) {
+    void import('@capacitor/app')
+      .then(async ({ App }) => {
+        lifecycle = await App.addListener('appStateChange', ({ isActive }) => {
+          appActive = isActive
+          if (isActive) {
+            library.activate()
+            void refreshNative()
+          } else library.suspend()
+        })
+        if (disposed) {
+          await lifecycle.remove()
+          return
+        }
+        await refreshNative()
+      })
+      .catch(() => {
+        library.error = '无法监听应用状态，请重新启动应用。'
+      })
+  } else void library.load()
   media.addEventListener('change', onTheme)
   window.addEventListener('online', onNetwork)
   window.addEventListener('offline', onNetwork)
 })
 onUnmounted(() => {
+  disposed = true
+  void lifecycle?.remove()
+  if (library.isNative) library.suspend()
   media.removeEventListener('change', onTheme)
   window.removeEventListener('online', onNetwork)
   window.removeEventListener('offline', onNetwork)
@@ -94,7 +143,7 @@ onUnmounted(() => {
         <RouterLink to="/privacy">了解隐私保护 <ArrowUpRight :size="14" /></RouterLink>
       </div>
       <div class="sidebar-footer">
-        <span><i class="status-dot"></i> 本地模式</span><span>PHASE 01</span>
+        <span><i class="status-dot"></i> 本地模式</span><span>PHASE 02</span>
       </div>
     </div>
   </aside>

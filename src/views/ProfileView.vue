@@ -40,7 +40,7 @@ const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
   <div class="profile-stats">
     <div>
       <Images :size="21" /><strong>{{ library.photos.length }}</strong
-      ><span>示例照片</span>
+      ><span>{{ library.isNative ? '本机照片' : '示例照片' }}</span>
     </div>
     <div>
       <Heart :size="21" /><strong>{{ library.favorites.length }}</strong
@@ -73,6 +73,6 @@ const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
   <div class="about-note">
     <img src="/favicon.svg" alt="" /><strong>NOBI Photos</strong>
     <p>照片留在本地，回忆自在生长。</p>
-    <span>v0.1.0 · Phase 1 · 本地示例预览</span>
+    <span>v0.2.0 · Phase 2 · {{ library.isNative ? '本机相册' : '浏览器示例预览' }}</span>
   </div>
 </template>
