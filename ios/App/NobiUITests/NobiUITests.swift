@@ -10,6 +10,15 @@ final class NobiUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 45))
     }
+    override func tearDownWithError() throws {
+        if testRun?.hasSucceeded == false {
+            print("NOBI_TEST_FAILURE_HIERARCHY\n" + app.debugDescription)
+            let shot = XCTAttachment(screenshot: app.screenshot())
+            shot.name = "ios-failure-synthetic-library"
+            shot.lifetime = .keepAlways
+            add(shot)
+        }
+    }
     private func text(_ value: String) -> XCUIElement {
         app.webViews.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", value)).firstMatch
     }
@@ -38,8 +47,12 @@ final class NobiUITests: XCTestCase {
             XCTAssertTrue(link.isHittable, "Safe-area navigation must be tappable: \(tab)")
             link.tap()
         }
-        app.webViews.buttons["深色"].firstMatch.tap()
-        app.webViews.buttons["浅色"].firstMatch.tap()
+        let dark = app.webViews.buttons["深色"].firstMatch
+        XCTAssertTrue(dark.waitForExistence(timeout: 30))
+        dark.tap()
+        let light = app.webViews.buttons["浅色"].firstMatch
+        XCTAssertTrue(light.waitForExistence(timeout: 20))
+        light.tap()
         app.webViews.links["隐私与安全中心"].firstMatch.tap()
         let back = app.webViews.buttons["返回我的"].firstMatch
         XCTAssertTrue(back.waitForExistence(timeout: 20))

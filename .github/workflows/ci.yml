@@ -76,6 +76,9 @@ jobs:
           set -euo pipefail
           xcodebuild -project ios/App/App.xcodeproj -scheme Nobi -configuration Release -destination 'generic/platform=iOS' -archivePath artifacts/NOBI-Photos.xcarchive CODE_SIGNING_ALLOWED=NO archive | tee artifacts/ios-device-build.log
           ditto -c -k --keepParent artifacts/NOBI-Photos.xcarchive artifacts/NOBI-Photos-ios-unsigned-archive.zip
+      - name: Capture isolated simulator diagnostics
+        if: always()
+        run: xcrun simctl io "$NOBI_SIM_UDID" screenshot artifacts/ios-final.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -87,3 +90,4 @@ jobs:
             artifacts/ios-device-build.log
             artifacts/ios-test.log
             artifacts/ios-ui.xcresult
+            artifacts/ios-final.png
