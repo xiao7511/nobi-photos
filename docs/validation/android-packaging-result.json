@@ -1,0 +1,95 @@
+{
+  "validatedAt": "2026-10-21T22:32:34.2600475+08:00",
+  "package": {
+    "checkedAt": "2026-10-21T22:31:03.2940834+08:00",
+    "sourceCommit": "21ae1f9d8d9bf4e20f42deaa442854da5fe2cf59",
+    "package": "app.nobi.photos",
+    "versionName": "0.4.0",
+    "versionCode": 4,
+    "variant": "debug",
+    "apk": "artifacts/android-21ae1f9/NOBI-Photos-0.4.0-debug.apk",
+    "bytes": 13298707,
+    "sha256": "25249411069bc039d2593f7631285a69b3db52bd0a24cdfb4d494992e6925f70",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "compileSdk": 36,
+    "abis": ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"],
+    "signatureVerified": true,
+    "signatureScheme": "v2",
+    "signer": "Android Debug",
+    "permissions": [
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.READ_MEDIA_IMAGES",
+      "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+      "app.nobi.photos.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    ],
+    "backupDisabled": true,
+    "extractionExclusions": 10,
+    "internetPermission": false,
+    "remoteWebServer": false,
+    "bridgeLogging": "none",
+    "bundledWebFilesHashMatched": 37,
+    "nativePlugins": ["@capacitor-community/sqlite", "@capacitor/app", "@nobi/photo-library"],
+    "status": "passed"
+  },
+  "checks": {
+    "eslint": "passed",
+    "typecheck": "passed",
+    "vitest": {
+      "files": 12,
+      "tests": 63,
+      "status": "passed"
+    },
+    "viteBuild": "passed",
+    "capacitorSync": "passed",
+    "capacitorPrivacyCheck": "passed",
+    "gradleAssembleDebug": "passed",
+    "appLint": {
+      "errors": 0,
+      "warnings": 14
+    },
+    "photoLibraryPluginLint": {
+      "errors": 0,
+      "warnings": 0
+    }
+  },
+  "nativeRun": {
+    "completedAt": "2026-10-21T22:31:13.0570681+08:00",
+    "apkSha256": "25249411069bc039d2593f7631285a69b3db52bd0a24cdfb4d494992e6925f70",
+    "result": {
+      "platform": "Android 14 AOSP API 34",
+      "serial": "emulator-5580",
+      "photos": 101,
+      "initialPermission": "prompt",
+      "systemDenial": true,
+      "systemFullGrant": true,
+      "nativeSqlite": true,
+      "nativeThumbnails": true,
+      "persistedFavorite": true,
+      "nativeOrganizationAndAnalysis": true,
+      "phase4BatchSearchLifecycle": true,
+      "backgroundHiddenAndRestored": true,
+      "airplaneModeColdStart": true,
+      "permissionRevocationClearsIndex": true,
+      "source": "synthetic",
+      "status": "passed"
+    },
+    "rendering": "540x1200, density 210, animations disabled",
+    "physicalDevice": false
+  },
+  "scope": {
+    "photos": "101 synthetic emulator fixtures only",
+    "cloudDatabaseConnected": false,
+    "photoUpload": false,
+    "iosValidated": false,
+    "releaseSigning": false
+  },
+  "remaining": [
+    "Physical Android device",
+    "Android 14 limited selection and access-scope changes",
+    "Android API 24-33 and API 35-36 runtime validation",
+    "Large library and interrupted scan lifecycle matrix",
+    "Release signing and distribution",
+    "iOS build and device validation"
+  ]
+}
