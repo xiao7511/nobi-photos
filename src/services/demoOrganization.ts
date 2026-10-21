@@ -3,6 +3,8 @@ import { METADATA_KEY } from './storageKeys'
 import type { StoragePort } from './localRepository'
 import { normalizeTags, validateAlbum } from '../domain/organization'
 import type { OrganizationRepository, UserAlbum } from '../domain/organization'
+import { planBatch } from '../domain/batchEdit'
+import type { BatchEdit } from '../domain/batchEdit'
 export interface DemoOrganization {
   albums: UserAlbum[]
   tags: Record<string, string[]>
@@ -100,6 +102,30 @@ export class DemoOrganizationRepository implements OrganizationRepository {
     const state = this.read()
     if (state.cleared || !createDemoPhotos().some((p) => p.id === id)) throw new Error('未找到照片')
     state.organization.tags[id] = normalizeTags(tags)
+    this.storage.setItem(METADATA_KEY, JSON.stringify(state))
+  }
+  async editBatch(ids: string[], edit: BatchEdit) {
+    const state = this.read()
+    const photos = state.cleared
+      ? []
+      : createDemoPhotos().map((p) => ({
+          ...p,
+          manualTags: state.organization.tags[p.id] ?? [],
+        }))
+    const plan = planBatch(ids, edit, photos, state.organization.albums)
+    if (plan.favorite !== undefined) {
+      const favorites = new Set(state.favorites)
+      for (const id of plan.ids) {
+        if (plan.favorite) favorites.add(id)
+        else favorites.delete(id)
+      }
+      state.favorites = [...favorites]
+    }
+    for (const entry of plan.tags ?? []) state.organization.tags[entry.id] = entry.tags
+    if (plan.album)
+      state.organization.albums = state.organization.albums.map((a) =>
+        a.id === plan.album!.id ? plan.album! : a,
+      )
     this.storage.setItem(METADATA_KEY, JSON.stringify(state))
   }
 }

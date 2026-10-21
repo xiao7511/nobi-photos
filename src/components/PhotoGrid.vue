@@ -5,7 +5,16 @@ import type { Photo } from '../domain/models'
 import { useLibrary } from '../stores/library'
 import PhotoThumbnail from './PhotoThumbnail.vue'
 import TagEditor from './TagEditor.vue'
-withDefaults(defineProps<{ photos: Photo[]; compact?: boolean }>(), { compact: false })
+withDefaults(
+  defineProps<{
+    photos: Photo[]
+    compact?: boolean
+    selecting?: boolean
+    selectedIds?: string[]
+  }>(),
+  { compact: false, selecting: false, selectedIds: () => [] },
+)
+const emit = defineEmits<{ toggle: [id: string] }>()
 const library = useLibrary()
 const selected = ref<Photo | null>(null)
 const dialog = ref<HTMLDialogElement>()
@@ -36,14 +45,24 @@ onUnmounted(() => dialog.value?.close())
 <template>
   <div v-if="photos.length" :class="['photo-grid', { compact }]">
     <article v-for="photo in photos" :key="photo.id" class="photo-card">
-      <button class="photo-open" :aria-label="`查看${photo.title}`" @click="open(photo, $event)">
+      <button
+        class="photo-open"
+        :aria-label="`${selecting ? '选择' : '查看'}${photo.title}`"
+        :aria-pressed="selecting ? selectedIds.includes(photo.id) : undefined"
+        :class="{ 'selection-active': selecting && selectedIds.includes(photo.id) }"
+        @click="selecting ? emit('toggle', photo.id) : open(photo, $event)"
+      >
         <PhotoThumbnail :photo="photo" />
+        <span v-if="selecting" class="photo-selection" aria-hidden="true">{{
+          selectedIds.includes(photo.id) ? '✓' : ''
+        }}</span>
         <div class="photo-caption">
           <span>{{ photo.title }}</span
           ><small>{{ photo.location }}</small>
         </div>
       </button>
       <button
+        v-if="!selecting"
         :class="['favorite-button', { saved: photo.favorite }]"
         :aria-label="`${photo.favorite ? '取消收藏' : '收藏'}${photo.title}`"
         :aria-pressed="photo.favorite"

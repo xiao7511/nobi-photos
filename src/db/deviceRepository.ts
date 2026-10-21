@@ -4,6 +4,8 @@ import schema1 from './schema.sql?raw'
 import schema2 from './migration2.sql?raw'
 import { normalizeTags, validateAlbum } from '../domain/organization'
 import type { UserAlbum } from '../domain/organization'
+import { planBatch } from '../domain/batchEdit'
+import type { BatchEdit } from '../domain/batchEdit'
 export interface SqlCommand {
   statement: string
   values: (string | number | null)[]
@@ -236,6 +238,35 @@ export class DevicePhotoRepository implements ScanRepository {
   async getSetting(key: string) {
     return (await this.driver.query('SELECT value FROM local_settings WHERE key = ?', [key]))[0]
       ?.value as string | undefined
+  }
+  async editBatch(ids: string[], edit: BatchEdit) {
+    const plan = planBatch(ids, edit, await this.list(), await this.listAlbums())
+    const commands: SqlCommand[] = []
+    if (plan.favorite !== undefined)
+      for (const id of plan.ids)
+        commands.push(
+          command('UPDATE photos SET is_favorite=? WHERE id=?', [plan.favorite ? 1 : 0, id]),
+        )
+    for (const entry of plan.tags ?? []) {
+      commands.push(
+        command("DELETE FROM photo_tags WHERE photo_id=? AND origin='manual'", [entry.id]),
+      )
+      for (const tag of entry.tags)
+        commands.push(
+          command("INSERT INTO photo_tags(photo_id,tag,origin) VALUES (?,?,'manual')", [
+            entry.id,
+            tag,
+          ]),
+        )
+    }
+    if (plan.album) {
+      commands.push(command('DELETE FROM album_photos WHERE album_id=?', [plan.album.id]))
+      for (const id of plan.album.photoIds)
+        commands.push(
+          command('INSERT INTO album_photos(album_id,photo_id) VALUES (?,?)', [plan.album.id, id]),
+        )
+    }
+    await this.driver.batch(commands)
   }
   async setSetting(key: string, value: string) {
     await this.driver.batch([

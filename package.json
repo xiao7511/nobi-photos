@@ -1,8 +1,8 @@
 {
   "name": "nobi-photos",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
-  "description": "NOBI Photos: private albums, tags and local similarity suggestions, Phase 3",
+  "description": "NOBI Photos: offline batch organization and combined search, Phase 4",
   "scripts": {
     "dev": "vite",
     "lint": "eslint . --max-warnings 0",

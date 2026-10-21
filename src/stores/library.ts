@@ -9,6 +9,7 @@ import { openDeviceRepository } from '../db/nativeDatabase'
 import { DemoOrganizationRepository } from '../services/demoOrganization'
 import type { OrganizationRepository, UserAlbum } from '../domain/organization'
 import { useAnalysis } from './analysis'
+import type { BatchEdit } from '../domain/batchEdit'
 
 export const useLibrary = defineStore('library', () => {
   const photos = ref<Photo[]>([])
@@ -152,6 +153,10 @@ export const useLibrary = defineStore('library', () => {
       await load()
       if (error.value) throw new Error('已保存，但重新加载失败，请重试')
       notice.value = message
+    } catch (e) {
+      if (isNative) await load()
+      error.value = e instanceof Error ? e.message : '本地整理记录未保存，请重试。'
+      throw e
     } finally {
       busy.value = false
     }
@@ -164,6 +169,21 @@ export const useLibrary = defineStore('library', () => {
   }
   function saveTags(id: string, tags: string[]) {
     return organize((repo) => repo.saveTags(id, tags), '手动标签已保存在本地')
+  }
+  function editBatch(ids: string[], edit: BatchEdit) {
+    const selected = [...ids]
+    return organize(
+      async (repo) => {
+        // Recheck native accessibility just before writing a batch, including limited access.
+        const current = isNative ? await device.readPhotos() : photos.value
+        if (isNative && !foreground) throw new Error('应用已进入后台，请返回后重试。')
+        const available = new Set(current.map((p) => p.id))
+        if (selected.some((id) => !available.has(id)))
+          throw new Error('部分照片已不可访问，请重新加载后选择。')
+        await repo.editBatch(selected, edit)
+      },
+      `已更新 ${new Set(selected).size} 张照片的本地整理记录`,
+    )
   }
   return {
     photos,
@@ -183,5 +203,6 @@ export const useLibrary = defineStore('library', () => {
     saveAlbum,
     deleteAlbum,
     saveTags,
+    editBatch,
   }
 })

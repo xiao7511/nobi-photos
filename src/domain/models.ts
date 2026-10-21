@@ -23,6 +23,11 @@ export interface PhotoQuery {
   text?: string
   category?: Category
   favoritesOnly?: boolean
+  fromDate?: string
+  toDate?: string
+  orientation?: 'landscape' | 'portrait' | 'square'
+  manualTags?: string[]
+  photoIds?: string[]
 }
 export interface PhotoRepository {
   list(): Promise<Photo[]>

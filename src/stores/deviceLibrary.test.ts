@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
     removeInaccessible: vi.fn(),
     clearMetadata: vi.fn(),
     setFavorite: vi.fn(),
+    editBatch: vi.fn(),
     beginScan: vi.fn(),
     stagePage: vi.fn(),
     commitScan: vi.fn(),
@@ -35,6 +36,23 @@ const photos = createDemoPhotos()
   .slice(0, 2)
   .map((p, i) => ({ ...p, source: 'device' as const, assetId: String(i), id: `device:${i}` }))
 describe('native UI authorization and privacy guards', () => {
+  it('rechecks selected native identifiers before a batch and hides data after revocation', async () => {
+    const library = useLibrary()
+    await library.load()
+    mocks.bridge.getAccess.mockResolvedValue({ status: 'limited' })
+    mocks.bridge.filterAccessible.mockResolvedValue({ assetIds: ['1'] })
+    await expect(
+      library.editBatch(['device:0', 'device:1'], { kind: 'favorite', value: true }),
+    ).rejects.toThrow('不可访问')
+    expect(mocks.repo.editBatch).not.toHaveBeenCalled()
+    expect(library.photos.map((p) => p.id)).toEqual(['device:1'])
+    mocks.bridge.getAccess.mockResolvedValue({ status: 'denied' })
+    await expect(
+      library.editBatch(['device:1'], { kind: 'favorite', value: true }),
+    ).rejects.toThrow('不可访问')
+    expect(library.photos).toEqual([])
+    expect(library.albums).toEqual([])
+  })
   beforeEach(() => {
     vi.resetAllMocks()
     setActivePinia(createPinia())

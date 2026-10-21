@@ -1,4 +1,4 @@
-# 原生设备验收清单（Phase 3 更新）
+# 原生设备验收清单（Phase 4 更新）
 
 2026-10-21 已在 Windows 上启动专用 `nobi_photos_test` Android 14 AOSP / API 34 模拟器，执行真实系统权限弹窗、MediaStore、WebView 与 SQLite 集成验证。只使用脚本生成的 101 张图片，不读取私人相册。此结果不代表其他系统、有限授权或物理设备通过。
 
@@ -17,7 +17,13 @@
 
 证据：[运行结果](validation/android-api34-result.json)、[原生相册截图](screenshots/native-phase3-albums.png)、[原生分析截图](screenshots/native-phase3-analysis.png)。复跑方式见 README；脚本只允许专用 AVD，执行前会清除该 AVD 中本应用的测试数据。
 
-下方矩阵除上述对应步骤外，仍需执行，尤其有限范围变更、后台生命周期、旧版系统、401 张原生图片、飞行模式重启和 iOS。已有 JS/内存 SQLite 测试不计作这些场景的系统运行验证。
+## Phase 4 已补验子集
+
+最终 0.4.0 APK 在同一专用 Android 14 AOSP 模拟器重跑基础流程，并实际补验：两张合成图片批量标签与精确标签搜索、Home 键切后台后隐藏照片、返回前台恢复结果、飞行模式且关闭 Wi-Fi 后强停/冷启动并恢复 101 条索引及两条标签、ADB 撤销读取权限后页面/照片索引/标签清空。
+
+结果：[Phase 4 原始记录](validation/android-api34-phase4-result.json)，步骤和截图见 [Phase 4 报告](PHASE4-ACCEPTANCE.md)。最终模拟器渲染为 540×1200 / density 210、关闭动画；不作为真机性能或能耗证明。
+
+下方矩阵除已明确记录的步骤外仍需执行，尤其有限范围变更、扫描过程中的后台/杀进程/撤权、旧版系统、401 张原生图片和 iOS。已有 JS/内存 SQLite 测试不计作这些场景的系统运行验证。
 
 ## 环境
 

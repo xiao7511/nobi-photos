@@ -41,6 +41,52 @@ async function index(repo: DevicePhotoRepository, id: string, photos: DevicePhot
   await repo.commitScan(id)
 }
 describe('device SQLite index and migration v2', () => {
+  it('rolls back every photo in a native batch when a later SQL write fails', async () => {
+    const { repo, db } = setup()
+    await index(repo, 'batch', [photo('a'), photo('b')])
+    await repo.saveTags('device:a', ['keep'])
+    db.exec(
+      "CREATE TRIGGER reject_b BEFORE INSERT ON photo_tags WHEN NEW.photo_id='device:b' BEGIN SELECT RAISE(ABORT, 'test failure'); END",
+    )
+    await expect(
+      repo.editBatch(['device:a', 'device:b'], { kind: 'tags', mode: 'add', tags: ["tag';--"] }),
+    ).rejects.toThrow('test failure')
+    expect((await repo.list()).find((p) => p.id === 'device:a')?.manualTags).toEqual(['keep'])
+    expect((await repo.list()).find((p) => p.id === 'device:b')?.manualTags).toEqual([])
+  })
+  it('persists native batch favorites, tags and album memberships without modifying other records', async () => {
+    const { repo } = setup()
+    await index(repo, 'batch', [photo('a'), photo('b'), photo('c')])
+    await repo.saveAlbum({ id: 'user:batch', name: 'batch', photoIds: ['device:c'] })
+    await repo.editBatch(['device:a', 'device:b'], { kind: 'favorite', value: true })
+    await repo.editBatch(['device:a', 'device:b'], {
+      kind: 'tags',
+      mode: 'add',
+      tags: ["tag';--", 'Keep'],
+    })
+    await repo.editBatch(['device:a'], { kind: 'tags', mode: 'remove', tags: ['KEEP'] })
+    await repo.editBatch(['device:a', 'device:b'], {
+      kind: 'album',
+      mode: 'add',
+      albumId: 'user:batch',
+    })
+    await repo.editBatch(['device:a'], { kind: 'album', mode: 'remove', albumId: 'user:batch' })
+    expect((await repo.list()).find((p) => p.id === 'device:a')).toMatchObject({
+      favorite: true,
+      manualTags: ["tag';--"],
+    })
+    expect((await repo.list()).find((p) => p.id === 'device:c')).toMatchObject({
+      favorite: false,
+      manualTags: [],
+    })
+    expect((await repo.listAlbums())[0]?.photoIds).toEqual(['device:b', 'device:c'])
+    await index(repo, 'again', [photo('a'), photo('b'), photo('c')])
+    expect((await repo.listAlbums())[0]?.photoIds).toEqual(['device:b', 'device:c'])
+    await expect(
+      repo.editBatch(['device:a', 'missing'], { kind: 'favorite', value: false }),
+    ).rejects.toThrow('不可访问')
+    expect((await repo.list()).find((p) => p.id === 'device:a')?.favorite).toBe(true)
+  })
   it('persists manual albums/tags across scans and cascades missing membership only', async () => {
     const { repo } = setup()
     await index(repo, 'initial', [photo('a'), photo('b')])

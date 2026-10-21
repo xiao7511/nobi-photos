@@ -14,6 +14,8 @@ import PhotoGrid from '../components/PhotoGrid.vue'
 import LibraryConnection from '../components/LibraryConnection.vue'
 import { useLibrary } from '../stores/library'
 import type { Category } from '../domain/models'
+import BatchToolbar from '../components/BatchToolbar.vue'
+import { usePhotoSelection } from '../composables/usePhotoSelection'
 const library = useLibrary()
 const filter = ref('全部照片')
 const order = ref('newest')
@@ -47,6 +49,7 @@ const groups = computed(() =>
     photos: visible.value.filter((p) => p.takenAt.startsWith(date)),
   })),
 )
+const { selecting, selectedIds, toggle, selectVisible, clear, exit } = usePhotoSelection(visible)
 </script>
 <template>
   <section class="page-heading">
@@ -127,6 +130,16 @@ const groups = computed(() =>
       }}<span v-if="item === '全部照片'">{{ library.photos.length }}</span>
     </button>
   </div>
+  <BatchToolbar
+    :selecting="selecting"
+    :selected-ids="selectedIds"
+    :total="visible.length"
+    @start="selecting = true"
+    @exit="exit"
+    @all="selectVisible"
+    @clear="clear"
+    @saved="exit"
+  />
   <div v-if="library.loading" class="empty-state" role="status">正在打开本地相册…</div>
   <template v-else-if="visible.length">
     <section v-for="group in groups" :key="group.date" class="date-group">
@@ -138,7 +151,13 @@ const groups = computed(() =>
         </h3>
         <span>{{ group.photos.length }} 张照片</span>
       </div>
-      <PhotoGrid :photos="group.photos" :compact="compact" />
+      <PhotoGrid
+        :photos="group.photos"
+        :compact="compact"
+        :selecting="selecting"
+        :selected-ids="selectedIds"
+        @toggle="toggle"
+      />
     </section>
   </template>
   <PhotoGrid v-else :photos="[]" />

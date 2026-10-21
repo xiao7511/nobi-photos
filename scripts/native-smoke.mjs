@@ -128,6 +128,35 @@ for (let i = 0; i < 30; i++) {
 assert.match(pid, /^\d+$/)
 await adb('forward', 'tcp:9225', `localabstract:webview_devtools_remote_${pid}`)
 let browser
+const originalWifi =
+  process.env.NOBI_TEST_PHASE4 === '1'
+    ? await adb('shell', 'settings', 'get', 'global', 'wifi_on')
+    : ''
+async function connectPage() {
+  let currentPid = ''
+  for (let i = 0; i < 30; i++) {
+    currentPid = await appPid()
+    if (currentPid) break
+    await setTimeout(1000)
+  }
+  assert.match(currentPid, /^\d+$/)
+  await adb('forward', 'tcp:9225', `localabstract:webview_devtools_remote_${currentPid}`)
+  for (let i = 0; i < 40; i++) {
+    try {
+      browser = await chromium.connectOverCDP('http://127.0.0.1:9225', {
+        timeout: 2000,
+        noDefaults: true,
+      })
+      const context = browser.contexts()[0]
+      const page = context.pages()[0] || (await context.waitForEvent('page', { timeout: 15000 }))
+      page.setDefaultTimeout(90000)
+      return page
+    } catch {
+      await setTimeout(1000)
+    }
+  }
+  throw new Error('WebView debugging unavailable')
+}
 try {
   for (let i = 0; i < 40; i++) {
     try {
@@ -144,7 +173,7 @@ try {
   const context = browser.contexts()[0]
   let page = context.pages()[0]
   if (!page) page = await context.waitForEvent('page', { timeout: 15000 })
-  page.setDefaultTimeout(20000)
+  page.setDefaultTimeout(60000)
   await page.getByRole('button', { name: '连接并读取照片', exact: true }).waitFor()
   assert.equal(
     await page.locator('.photo-card').count(),
@@ -200,6 +229,9 @@ try {
       document.querySelectorAll('.photo-card').length === 101 &&
       document.querySelector('.favorite-button')?.getAttribute('aria-pressed') === 'true',
   )
+  console.log(
+    'Native base passed: system denial/full grant, 101 indexed photos, thumbnails and persisted favorite',
+  )
   let organization = false
   if (process.env.NOBI_TEST_PHASE3 !== '0') {
     await page.evaluate(() => {
@@ -237,6 +269,106 @@ try {
     assert.ok((await page.getByRole('heading', { name: /可能相似 ·/ }).count()) > 0)
     await page.screenshot({ path: join(output, 'native-phase3-analysis.png') })
     organization = true
+    console.log('Native organization passed: album, manual tag and local similarity analysis')
+  }
+  let phase4 = false
+  if (process.env.NOBI_TEST_PHASE4 === '1') {
+    await page.evaluate(() => {
+      location.hash = '/'
+    })
+    await page.getByRole('button', { name: '选择照片', exact: true }).click()
+    await page.locator('.photo-open').nth(0).click()
+    await page.locator('.photo-open').nth(1).click()
+    await page.getByRole('button', { name: '整理所选照片', exact: true }).click()
+    const batch = page.getByRole('dialog', { name: '批量整理 2 张照片', exact: true })
+    await batch.getByRole('combobox', { name: '整理操作' }).selectOption('tags-add')
+    await batch.getByRole('textbox', { name: '批量手动标签' }).fill('批量验证')
+    await batch.getByRole('button', { name: '确认保存整理' }).click()
+    await page.getByRole('button', { name: '选择照片', exact: true }).waitFor()
+    const queryTags = async () =>
+      page.evaluate(() =>
+        globalThis.Capacitor.Plugins.CapacitorSQLite.query({
+          database: 'nobi_photos',
+          statement:
+            "SELECT COUNT(*) AS count FROM photo_tags WHERE origin='manual' AND tag='批量验证'",
+          values: [],
+          readonly: false,
+        }),
+      )
+    assert.equal((await queryTags()).values[0].count, 2)
+    console.log('Native Phase 4 batch labels saved for two synthetic photos')
+    await page.evaluate(() => {
+      location.hash = '/search'
+    })
+    await page.locator('.advanced-search summary').click()
+    await page.getByRole('textbox', { name: '精确手动标签' }).fill('批量验证')
+    await page.getByRole('button', { name: '搜索', exact: true }).click()
+    await page.waitForFunction(() => document.querySelectorAll('.photo-card').length === 2)
+    await page.screenshot({ path: join(output, 'native-phase4-search.png') })
+    await adb('shell', 'input', 'keyevent', 'KEYCODE_HOME')
+    await page.waitForFunction(
+      () => document.querySelectorAll('.photo-card').length === 0,
+      {},
+      { polling: 100 },
+    )
+    await adb('shell', 'am', 'start', '-n', 'app.nobi.photos/.MainActivity')
+    await page.waitForFunction(() => document.querySelectorAll('.photo-card').length === 2)
+    console.log('Native Phase 4 search and background/resume passed')
+    await adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'enable')
+    await adb('shell', 'svc', 'wifi', 'disable')
+    assert.equal(await adb('shell', 'settings', 'get', 'global', 'airplane_mode_on'), '1')
+    assert.equal(await adb('shell', 'settings', 'get', 'global', 'wifi_on'), '0')
+    await browser.close()
+    browser = undefined
+    await adb('shell', 'am', 'force-stop', 'app.nobi.photos')
+    await adb('shell', 'am', 'start', '-n', 'app.nobi.photos/.MainActivity')
+    page = await connectPage()
+    await page.waitForFunction(
+      () => document.querySelectorAll('.photo-card').length === 101,
+      {},
+      { timeout: 90000 },
+    )
+    assert.equal((await queryTags()).values[0].count, 2)
+    await page.screenshot({ path: join(output, 'native-phase4-offline-cold-start.png') })
+    console.log('Native Phase 4 airplane-mode cold start passed, Wi-Fi was disabled')
+    await adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'disable')
+    await browser.close()
+    browser = undefined
+    // Android terminates the app when media permissions are revoked.
+    await adb('shell', 'pm', 'revoke', 'app.nobi.photos', 'android.permission.READ_MEDIA_IMAGES')
+    await adb(
+      'shell',
+      'pm',
+      'revoke',
+      'app.nobi.photos',
+      'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
+    )
+    await adb('shell', 'am', 'start', '-n', 'app.nobi.photos/.MainActivity')
+    page = await connectPage()
+    await page.getByRole('button', { name: '连接并读取照片', exact: true }).waitFor()
+    // Wait for the actual library load, not the initial prompt button before SQLite opens.
+    await page.getByRole('heading', { name: '留一点空间，给新的回忆', exact: true }).waitFor()
+    const revokedAccess = await page.evaluate(() =>
+      globalThis.Capacitor.Plugins.NobiPhotoLibrary.getAccess(),
+    )
+    assert.ok(['prompt', 'denied'].includes(revokedAccess.status))
+    assert.equal(await page.locator('.photo-card').count(), 0)
+    const cleared = await page.evaluate(() =>
+      globalThis.Capacitor.Plugins.CapacitorSQLite.query({
+        database: 'nobi_photos',
+        statement: 'SELECT COUNT(*) AS count FROM photos',
+        values: [],
+        readonly: false,
+      }),
+    )
+    assert.equal(cleared.values[0].count, 0)
+    const noTags = await queryTags()
+    assert.equal(noTags.values[0].count, 0)
+    await page.screenshot({ path: join(output, 'native-phase4-revoked.png') })
+    phase4 = true
+    console.log(
+      'Native Phase 4 permission revocation passed: no visible photos, index and manual tags cleared',
+    )
   }
   await writeFile(
     join(output, 'result.json'),
@@ -252,6 +384,14 @@ try {
         nativeThumbnails: true,
         persistedFavorite: true,
         nativeOrganizationAndAnalysis: organization,
+        phase4BatchSearchLifecycle: phase4,
+        ...(phase4
+          ? {
+              backgroundHiddenAndRestored: true,
+              airplaneModeColdStart: true,
+              permissionRevocationClearsIndex: true,
+            }
+          : {}),
         source: 'synthetic',
         status: 'passed',
       },
@@ -265,4 +405,8 @@ try {
 } finally {
   await browser?.close()
   await adb('forward', '--remove', 'tcp:9225')
+  if (process.env.NOBI_TEST_PHASE4 === '1') {
+    await adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'disable')
+    if (originalWifi === '1' || originalWifi === '2') await adb('shell', 'svc', 'wifi', 'enable')
+  }
 }

@@ -1,6 +1,6 @@
 # Phase 1 工程与安全决策
 
-本文保留 Phase 1 的历史设计记录。Phase 2 原生 SQLite/只读媒体接口与 Phase 3 相册、标签和本地分析的当前架构见 [README](../README.md)，实际验证见 [Phase 3 报告](PHASE3-ACCEPTANCE.md)。
+本文保留 Phase 1 的历史设计记录。当前原生 SQLite/只读媒体接口、相册、标签、本地分析、批量整理与组合搜索架构见 [README](../README.md)，最新验证见 [Phase 4 报告](PHASE4-ACCEPTANCE.md)。
 
 ## 交付范围
 

@@ -1,6 +1,6 @@
 # NOBI Photos · Nobi 相册
 
-本地优先、无需注册的移动相册。当前版本 **0.3.0 / Phase 3**：原生照片读取、本地 SQLite 索引、自建相册、手动标签与本地相似照片建议。
+本地优先、无需注册的移动相册。当前版本 **0.4.0 / Phase 4**：原生照片读取、本地 SQLite 索引、自建相册、手动标签、本地相似照片建议，以及批量整理与组合搜索。
 
 浏览器保留 12 张随包 SVG 示例；真实照片功能需 Android / iOS 原生应用。二者的数据仓库独立，不混合示例和真实照片。
 
@@ -70,11 +70,19 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -dest
 
 最多 200 个自建相册，名称 1–40 字符；单个相册最多 10,000 个成员。编辑器每次显示前 200 个匹配照片，可搜索缩小范围。浏览器整理示例图片，原生端整理实际授权照片；两者数据独立。
 
+## Phase 4 使用流程
+
+1. 在照片页或搜索结果点击“选择照片”，逐张选择或全选当前结果，每次最多 500 张；筛选范围变化时，自动移除不再可见的选择。
+2. 点击“整理所选照片”，批量加入/取消本地收藏、添加/移除指定手动标签，或加入/移出已有自建相册。新相册仍在分类页创建。
+3. 查看所选数量与操作，确认后一次性保存。先校验所有照片和标签上限，再以单个 SQLite 事务（浏览器为单次 localStorage 写入）保存；失败不会部分更新。不修改系统相册或原图。
+4. 搜索页展开“组合筛选”，组合关键词、日期范围、自建相册、精确手动标签、收藏与横/竖/方图条件。所有条件同时满足；日期包含首尾两天，使用索引日期。多个精确标签用逗号分隔，忽略大小写。
+5. 修改筛选后点击“搜索”；结果随当前图库与整理数据更新。条件与选择只在页面内存中，不写入历史记录、网址或数据库，可用“重置搜索”清空。
+
 ## 功能与边界
 
 - 照片：日期分组、排序、密度切换、缩略预览、本地收藏；原生照片默认“未分类”。
 - 分类：自建相册、浏览器示例分类及原生未分类/收藏集合。
-- AI 搜索：本地标题、日期、分类、地点和标签关键词；多个词取交集。未接入语义 AI。
+- AI 搜索：本地标题、日期、分类、地点和标签关键词；多个词与组合筛选条件取交集。未接入语义 AI。
 - 清理：主动运行本地缩略图相似度分析、进度与取消、逐组保留建议；浏览器另有明确标记的预设示例组。没有原图删除接口。
 - 我的与隐私中心：免注册、浅色/深色/跟随系统、照片权限、扫描控制、本地数据管理。
 - 仅支持图片索引，不导入视频。iOS 不读取原图文件大小；云端未下载缩略图可能不可用。
@@ -90,6 +98,8 @@ src/db/                     SQLite v1、v2 迁移、原生连接、索引仓库
 src/services/scanEngine.ts   快照分页、进度、取消、提交/丢弃状态机
 src/services/similarity.ts   本地视觉指纹与非传递式建议分组
 src/domain/organization.ts  相册与标签约束、仓库接口
+src/domain/batchEdit.ts     批量整理计划、全量校验与事务适配
+src/composables/            页面内照片选择、筛选与权限变动时清理
 src/stores/                 Pinia、权限/前台状态、索引访问校验
 src/components/             授权说明、扫描控制、按需缩略图
 ```
@@ -112,17 +122,24 @@ Capacitor 桥接日志关闭，避免调试日志输出照片元数据或 SQL �
 
 ## 验收
 
-- [Phase 3 验收报告](docs/PHASE3-ACCEPTANCE.md)
+- [Phase 4 验收报告](docs/PHASE4-ACCEPTANCE.md)
+- [Phase 3 历史报告](docs/PHASE3-ACCEPTANCE.md)
 - [Phase 2 历史报告](docs/PHASE2-ACCEPTANCE.md)
 - [原生真机验证清单](docs/NATIVE-TEST-MATRIX.md)
 - [Phase 1 历史报告](docs/PHASE1-ACCEPTANCE.md)
 
-当前 Windows 环境已在专用 Android 14 AOSP 模拟器上实际验证系统拒绝/完整授权、101 张合成图片分页读取、SQLite、缩略图、收藏、相册、标签和相似建议。有限授权、旧版 Android、iOS 与物理设备仍按矩阵补验。Phase 3 交付后停止，等待验收。
+当前 Windows 环境已在专用 Android 14 AOSP 模拟器上实际验证系统拒绝/完整授权、101 张合成图片分页读取、SQLite、缩略图、收藏、相册、标签和相似建议。Phase 4 的运行补验与剩余限制见最新验收报告。每个阶段交付后停止，等待验收。
 
 ### 重跑原生冒烟验证
 
 先构建 APK，再启动名为 `nobi_photos_test` 的专用 Android 14 / API 34 AOSP AVD（默认 serial 为 `emulator-5580`），执行 `npm run test:native`。可通过 `NOBI_TEST_SERIAL`、`NOBI_TEST_APK` 指定该测试模拟器和 APK。脚本会核对模拟器名称，拒绝其他设备；向其写入 101 张合成图片，安装应用并清除该模拟器中的 `app.nobi.photos` 测试数据，然后实际操作系统权限弹窗。不要在该 AVD 存放私人数据。结果与截图写入被 Git 忽略的 `artifacts/native-test/`。
 
 此脚本使用 ADB、Debug WebView 与本机 9225 端口，需要 Android SDK 和专用模拟器；不用于物理设备，也不替代完整原生测试矩阵。
+
+Phase 4 扩展场景：设置 `$env:NOBI_TEST_PHASE4='1'` 后运行 `npm run test:native`，额外执行原生批量标签、组合搜索、切后台/返回、飞行模式下进程冷启动，以及撤销照片权限后的索引清理。脚本在专用模拟器中临时切换飞行模式、撤销本应用的照片权限，结束时恢复飞行模式关闭；不能用于日常设备。
+
+资源受限主机建议将专用 AVD 渲染设为 540×1200 / density 210 并关闭动画；该配置保持相同逻辑宽度。原生冷启动等待上限 90 秒，不代表产品启动性能验收标准。当前已实际通过的原生子集与未执行场景见最新报告和矩阵。
+
+Vitest 默认最多两个 worker，以便与原生模拟器共存；没有跳过测试或降低校验规则。
 
 参考：[Capacitor Android 插件](https://capacitorjs.com/docs/plugins/android)、[iOS 插件](https://capacitorjs.com/docs/plugins/ios)、[Android 有限照片访问](https://developer.android.com/about/versions/14/changes/partial-photo-video-access)、[SQLite 插件](https://github.com/capacitor-community/sqlite)。
