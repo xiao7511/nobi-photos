@@ -1,14 +1,15 @@
 {
   "name": "nobi-photos",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "NOBI Photos: privacy-first offline photo album, Phase 2",
+  "description": "NOBI Photos: private albums, tags and local similarity suggestions, Phase 3",
   "scripts": {
     "dev": "vite",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:native": "node scripts/native-smoke.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "cap:check": "node scripts/check-capacitor.mjs",

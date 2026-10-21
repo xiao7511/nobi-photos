@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   },
   repo: {
     list: vi.fn(),
+    listAlbums: vi.fn(),
     getSetting: vi.fn(),
     setSetting: vi.fn(),
     removeInaccessible: vi.fn(),
@@ -42,6 +43,7 @@ describe('native UI authorization and privacy guards', () => {
       async ({ assetIds }: { assetIds: string[] }) => ({ assetIds }),
     )
     mocks.repo.list.mockResolvedValue(photos)
+    mocks.repo.listAlbums.mockResolvedValue([])
     mocks.repo.getSetting.mockResolvedValue(undefined)
   })
   it('never prompts or scans at launch and defaults automatic scanning to off', async () => {

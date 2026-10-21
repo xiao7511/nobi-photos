@@ -1,7 +1,9 @@
 import { createDemoPhotos } from '../data/demo'
 import type { Photo, PhotoRepository } from '../domain/models'
+import { readOrganization } from './demoOrganization'
 
-export const METADATA_KEY = 'nobi.photos.demo.v1'
+import { METADATA_KEY } from './storageKeys'
+export { METADATA_KEY } from './storageKeys'
 export interface StoragePort {
   getItem(key: string): string | null
   setItem(key: string, value: string): void
@@ -25,14 +27,25 @@ export class LocalPhotoRepository implements PhotoRepository {
     }
     if (state.cleared) return []
     const favorites = state.favorites
-    return createDemoPhotos().map((p) => ({ ...p, favorite: favorites.includes(p.id) }))
+    const organization = readOrganization('organization' in state ? state.organization : undefined)
+    return createDemoPhotos().map((p) => ({
+      ...p,
+      favorite: favorites.includes(p.id),
+      manualTags: organization.tags[p.id] ?? [],
+      tags: [...new Set([...p.tags, ...(organization.tags[p.id] ?? [])])],
+    }))
   }
   async setFavorite(id: string, favorite: boolean): Promise<void> {
     const photos = await this.list()
     if (!photos.some((p) => p.id === id)) throw new Error('未找到照片')
+    const raw = this.storage.getItem(METADATA_KEY)
+    const organization = raw
+      ? readOrganization(JSON.parse(raw).organization)
+      : readOrganization(undefined)
     this.write(
       photos.map((p) => (p.id === id ? { ...p, favorite } : p)),
       false,
+      organization,
     )
   }
   async clearMetadata(): Promise<void> {
@@ -41,10 +54,14 @@ export class LocalPhotoRepository implements PhotoRepository {
   async restoreDemo(): Promise<void> {
     this.write(createDemoPhotos(), false)
   }
-  private write(photos: Photo[], cleared: boolean) {
+  private write(photos: Photo[], cleared: boolean, organization = readOrganization(undefined)) {
     this.storage.setItem(
       METADATA_KEY,
-      JSON.stringify({ cleared, favorites: photos.filter((p) => p.favorite).map((p) => p.id) }),
+      JSON.stringify({
+        cleared,
+        favorites: photos.filter((p) => p.favorite).map((p) => p.id),
+        organization,
+      }),
     )
   }
 }

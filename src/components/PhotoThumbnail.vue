@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Photo } from '../domain/models'
-import { photoBridge } from '../native/bridge'
+import { localPreview } from '../services/localPreview'
 const props = defineProps<{ photo: Photo; detail?: boolean }>()
 const element = ref<HTMLImageElement>()
 const source = ref(props.photo.thumbnail)
@@ -13,11 +13,9 @@ async function load() {
   const request = ++version
   if (props.photo.source !== 'device' || !props.photo.assetId) return
   try {
-    const result = await photoBridge.thumbnail({ assetId: props.photo.assetId })
+    const dataUrl = await localPreview(props.photo)
     if (!alive || request !== version) return
-    if (/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(result.dataUrl))
-      source.value = result.dataUrl
-    else unavailable.value = true
+    source.value = dataUrl
   } catch {
     if (alive && request === version) unavailable.value = true
   }

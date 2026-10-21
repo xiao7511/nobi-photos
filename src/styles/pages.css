@@ -70,6 +70,109 @@
 .connection-panel .fine-print {
   line-height: 1.8;
 }
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 12px;
+  margin-top: 18px;
+}
+.text-input {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+}
+.album-editor {
+  width: min(730px, 94vw);
+  max-height: 90dvh;
+  padding: 30px;
+  overflow: auto;
+}
+.album-editor h2 {
+  margin-top: 12px;
+}
+.album-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  max-height: 340px;
+  overflow: auto;
+  margin: 20px 0;
+}
+.picker-photo {
+  display: block;
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--green-soft);
+}
+.picker-photo img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.picker-photo input {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--green);
+}
+.picker-photo span {
+  display: block;
+  padding: 8px;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.picker-photo:has(input:checked) {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+.album-empty {
+  padding: 28px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.album-empty .button {
+  margin-top: 14px;
+}
+.tag-editor small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin: 8px 0 12px;
+}
+.tag-editor .field-label {
+  margin-top: 0;
+}
+@media (max-width: 680px) {
+  .album-editor {
+    padding: 26px 20px;
+  }
+  .album-picker {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .library-toolbar .data-actions {
+    margin-top: 0;
+  }
+  .tag-editor .button {
+    min-height: 38px;
+  }
+}
 .hero-copy {
   padding: 31px 35px;
   z-index: 1;

@@ -2,6 +2,8 @@ import type { Photo } from '../domain/models'
 import type { DevicePhoto, ScanRepository } from '../native/contracts'
 import schema1 from './schema.sql?raw'
 import schema2 from './migration2.sql?raw'
+import { normalizeTags, validateAlbum } from '../domain/organization'
+import type { UserAlbum } from '../domain/organization'
 export interface SqlCommand {
   statement: string
   values: (string | number | null)[]
@@ -61,6 +63,12 @@ export class DevicePhotoRepository implements ScanRepository {
     const rows = await this.driver.query(
       "SELECT * FROM photos WHERE source = 'device' ORDER BY taken_at DESC, id",
     )
+    const tagRows = await this.driver.query(
+      "SELECT photo_id,tag FROM photo_tags WHERE origin='manual' ORDER BY tag",
+    )
+    const tags = new Map<string, string[]>()
+    for (const row of tagRows)
+      tags.set(String(row.photo_id), [...(tags.get(String(row.photo_id)) ?? []), String(row.tag)])
     return rows.map((r) => ({
       id: String(r.id),
       assetId: String(r.local_asset_id),
@@ -75,7 +83,8 @@ export class DevicePhotoRepository implements ScanRepository {
       source: 'device',
       category: '未分类',
       location: '本机',
-      tags: [],
+      tags: tags.get(String(r.id)) ?? [],
+      manualTags: tags.get(String(r.id)) ?? [],
       thumbnail: '/photo-placeholder.svg',
     }))
   }
@@ -175,6 +184,53 @@ export class DevicePhotoRepository implements ScanRepository {
       command('DELETE FROM scan_staging'),
       command('DELETE FROM scan_runs'),
       command('DELETE FROM local_settings'),
+      command("DELETE FROM albums WHERE kind='manual'"),
+    ])
+  }
+  async listAlbums(): Promise<UserAlbum[]> {
+    const albums = await this.driver.query(
+      "SELECT id,name FROM albums WHERE kind='manual' ORDER BY name,id",
+    )
+    const relations = await this.driver.query(
+      'SELECT album_id,photo_id FROM album_photos ORDER BY photo_id',
+    )
+    return albums.map((a) => ({
+      id: String(a.id),
+      name: String(a.name),
+      photoIds: relations.filter((r) => r.album_id === a.id).map((r) => String(r.photo_id)),
+    }))
+  }
+  async saveAlbum(album: UserAlbum) {
+    const valid = validateAlbum(album, new Set((await this.list()).map((p) => p.id)))
+    const existing = await this.listAlbums()
+    if (!existing.some((a) => a.id === valid.id) && existing.length >= 200)
+      throw new Error('最多创建 200 个相册')
+    await this.driver.batch([
+      command(
+        "INSERT INTO albums(id,name,kind) VALUES (?,?,'manual') ON CONFLICT(id) DO UPDATE SET name=excluded.name",
+        [valid.id, valid.name],
+      ),
+      command('DELETE FROM album_photos WHERE album_id=?', [valid.id]),
+      ...valid.photoIds.map((id) =>
+        command('INSERT INTO album_photos(album_id,photo_id) VALUES (?,?)', [valid.id, id]),
+      ),
+    ])
+  }
+  async deleteAlbum(id: string) {
+    await this.driver.batch([command("DELETE FROM albums WHERE id=? AND kind='manual'", [id])])
+  }
+  async saveTags(id: string, tags: string[]) {
+    const normalized = normalizeTags(tags)
+    if (
+      !(await this.driver.query("SELECT id FROM photos WHERE id=? AND source='device'", [id]))
+        .length
+    )
+      throw new Error('未找到照片')
+    await this.driver.batch([
+      command("DELETE FROM photo_tags WHERE photo_id=? AND origin='manual'", [id]),
+      ...normalized.map((tag) =>
+        command("INSERT INTO photo_tags(photo_id,tag,origin) VALUES (?,?,'manual')", [id, tag]),
+      ),
     ])
   }
   async getSetting(key: string) {

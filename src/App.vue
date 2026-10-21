@@ -143,7 +143,7 @@ onUnmounted(() => {
         <RouterLink to="/privacy">了解隐私保护 <ArrowUpRight :size="14" /></RouterLink>
       </div>
       <div class="sidebar-footer">
-        <span><i class="status-dot"></i> 本地模式</span><span>PHASE 02</span>
+        <span><i class="status-dot"></i> 本地模式</span><span>PHASE 03</span>
       </div>
     </div>
   </aside>

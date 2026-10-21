@@ -3,8 +3,10 @@ const config: CapacitorConfig = {
   appId: 'app.nobi.photos',
   appName: 'NOBI Photos',
   webDir: 'dist',
+  loggingBehavior: 'none',
   server: { androidScheme: 'https' },
   plugins: {
+    SystemBars: { insetsHandling: 'native', initialViewportFitValueHint: 'cover' },
     CapacitorSQLite: {
       iosDatabaseLocation: 'Library/NoCloud',
       iosIsEncryption: false,

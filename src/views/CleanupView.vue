@@ -3,7 +3,17 @@ import { computed, ref } from 'vue'
 import { ShieldCheck, Copy, Check, Leaf, ScanLine } from '@lucide/vue'
 import { useLibrary } from '../stores/library'
 import PhotoGrid from '../components/PhotoGrid.vue'
+import { useAnalysis } from '../stores/analysis'
 const library = useLibrary()
+const analysis = useAnalysis()
+const visibleGroups = computed(() =>
+  analysis.groups
+    .map((g) => ({ ...g, photos: library.photos.filter((p) => g.photoIds.includes(p.id)) }))
+    .filter((g) => g.photos.length > 1),
+)
+const similarCount = computed(() =>
+  visibleGroups.value.reduce((sum, g) => sum + g.photos.length, 0),
+)
 const reviewed = ref(false)
 const candidates = computed(() => library.photos.filter((p) => p.duplicateGroup))
 </script>
@@ -20,13 +30,7 @@ const candidates = computed(() => library.photos.filter((p) => p.duplicateGroup)
     <div>
       <span class="eyebrow">A LITTLE BREATHING SPACE</span>
       <h2>给回忆，留一些呼吸感。</h2>
-      <p>
-        {{
-          library.isNative
-            ? '本阶段仅建立照片索引，尚未进行相似度分析。'
-            : '这里只展示预设的示例相似组，未扫描设备。'
-        }}<br />未计算实际可释放空间。
-      </p>
+      <p>手动启动本地缩略图分析，找出可能相似的照片。<br />未计算实际可释放空间。</p>
       <div class="chips">
         <span class="chip">无后台扫描</span><span class="chip">无自动删除</span
         ><span class="chip">原图不变</span>
@@ -34,10 +38,70 @@ const candidates = computed(() => library.photos.filter((p) => p.duplicateGroup)
     </div>
     <Leaf :size="105" :stroke-width="0.8" />
   </section>
+  <section class="connection-panel spaced" aria-label="本地相似照片分析">
+    <div class="connection-heading">
+      <ScanLine :size="23" />
+      <div>
+        <h2>找一找，相似的瞬间</h2>
+        <p>
+          仅比较本地缩略图结构、颜色与比例；不是 AI
+          或原图一致性证明，结果需要逐张核对。图像指纹不写入数据库。
+        </p>
+      </div>
+    </div>
+    <div class="data-actions">
+      <button
+        class="button primary"
+        :disabled="analysis.running || !library.photos.length"
+        @click="analysis.analyze(library.photos)"
+      >
+        {{ analysis.running ? '分析中…' : '开始本地分析' }}</button
+      ><button v-if="analysis.running" class="button" @click="analysis.cancel()">取消分析</button>
+    </div>
+    <p class="body-text">
+      本次最多分析最新 500 张照片；低信息量或不可用的预览会跳过。不会上传照片、调用云端 AI
+      或删除原图。
+    </p>
+    <div v-if="analysis.running" class="scan-progress" role="status">
+      <progress :value="analysis.processed" :max="Math.max(1, analysis.total)"></progress
+      ><span>{{ analysis.processed }} / {{ analysis.total }} 张</span>
+    </div>
+    <p v-if="analysis.error" class="banner" role="status">{{ analysis.error }}</p>
+    <p v-if="analysis.completed" class="body-text" role="status">
+      本地分析完成：{{ visibleGroups.length }} 组可能相似照片；已处理
+      {{ analysis.processed }} 张，跳过 {{ analysis.skipped }} 张。{{
+        analysis.limited ? '仅覆盖最新 500 张。' : ''
+      }}
+    </p>
+  </section>
+  <section v-for="group in visibleGroups" :key="group.id" class="spaced">
+    <div class="library-toolbar">
+      <div class="section-title">
+        <h2>可能相似 · {{ group.photos.length }} 张</h2>
+        <span>与参考图的指纹距离 ≤ {{ group.distance }} / 64</span>
+      </div>
+      <button
+        class="button"
+        :disabled="analysis.reviewed.includes(group.id)"
+        @click="analysis.keep(group.id)"
+      >
+        <Check :size="16" />{{
+          analysis.reviewed.includes(group.id) ? '已标记保留' : '保留此组（本次会话）'
+        }}
+      </button>
+    </div>
+    <PhotoGrid :photos="group.photos" compact />
+  </section>
   <div class="cleanup-stats">
     <div>
-      <Copy :size="23" /><strong>{{ candidates.length }}</strong
-      ><span>{{ library.isNative ? '相似度分析尚未接入' : '示例相似照片' }}</span>
+      <Copy :size="23" /><strong>{{ analysis.completed ? similarCount : candidates.length }}</strong
+      ><span>{{
+        analysis.completed
+          ? '本次可能相似的照片'
+          : library.isNative
+            ? '等待手动分析'
+            : '预设示例相似照片'
+      }}</span>
     </div>
     <div>
       <ScanLine :size="23" /><strong>{{
@@ -47,7 +111,7 @@ const candidates = computed(() => library.photos.filter((p) => p.duplicateGroup)
     </div>
     <div><ShieldCheck :size="23" /><strong>0 张</strong><span>已删除的原始照片</span></div>
   </div>
-  <section class="spaced">
+  <section v-if="!analysis.completed && !library.isNative" class="spaced">
     <div class="library-toolbar">
       <div class="section-title">
         <h2>相似照片 · 示例组</h2>

@@ -41,6 +41,40 @@ async function index(repo: DevicePhotoRepository, id: string, photos: DevicePhot
   await repo.commitScan(id)
 }
 describe('device SQLite index and migration v2', () => {
+  it('persists manual albums/tags across scans and cascades missing membership only', async () => {
+    const { repo } = setup()
+    await index(repo, 'initial', [photo('a'), photo('b')])
+    await repo.saveAlbum({
+      id: 'user:test',
+      name: "旅行'; DROP TABLE photos;--",
+      photoIds: ['device:a', 'device:b', 'device:a'],
+    })
+    await repo.saveTags('device:a', ['纪念', '旅行', '纪念'])
+    await index(repo, 'updated', [photo('a', 'modified')])
+    expect((await repo.list())[0]).toMatchObject({
+      title: 'modified',
+      manualTags: ['旅行', '纪念'],
+    })
+    expect((await repo.listAlbums())[0]?.photoIds).toEqual(['device:a'])
+    await repo.deleteAlbum('user:test')
+    expect(await repo.listAlbums()).toEqual([])
+    expect(await repo.list()).toHaveLength(1)
+    expect((await repo.list())[0]?.tags).toContain('纪念')
+    await repo.saveTags('device:a', [])
+    expect((await repo.list())[0]?.tags).toEqual([])
+  })
+  it('validates native album inputs and clears user organization with the index', async () => {
+    const { repo } = setup()
+    await index(repo, 'initial', [photo('a')])
+    await expect(
+      repo.saveAlbum({ id: 'user:bad', name: 'bad', photoIds: ['missing'] }),
+    ).rejects.toThrow('不可访问')
+    await repo.saveAlbum({ id: 'user:ok', name: '保留', photoIds: ['device:a'] })
+    await repo.saveTags('device:a', ['本地'])
+    await repo.clearMetadata()
+    expect(await repo.listAlbums()).toEqual([])
+    expect(await repo.list()).toEqual([])
+  })
   it('migrates from v1 without replacing existing metadata', () => {
     const db = new DatabaseSync(':memory:')
     databases.push(db)

@@ -26,9 +26,7 @@ const filters = computed(() =>
 const connection = ref<HTMLElement>()
 function connect() {
   if (library.isNative) connection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  else
-    library.notice =
-      'Phase 2 原生照片读取已实现；浏览器不请求系统相册权限，请使用 Android / iOS 应用。'
+  else library.notice = '浏览器不请求系统相册权限，请使用 Android / iOS 应用连接照片。'
 }
 const visible = computed(() =>
   library.photos

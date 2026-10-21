@@ -58,7 +58,7 @@ test('five pages, local actions, safety and responsive layout', async ({ page },
   await page.goto('/')
   await expect(page.locator('.photo-card')).toHaveCount(12)
   await page.getByRole('button', { name: /连接本机相册/ }).click()
-  await expect(page.getByRole('status')).toContainText('Phase 2')
+  await expect(page.getByRole('status')).toContainText('浏览器不请求系统相册权限')
   await page.getByRole('button', { name: '关闭通知' }).click()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,

@@ -1,5 +1,7 @@
 # Phase 1 工程与安全决策
 
+本文保留 Phase 1 的历史设计记录。Phase 2 原生 SQLite/只读媒体接口与 Phase 3 相册、标签和本地分析的当前架构见 [README](../README.md)，实际验证见 [Phase 3 报告](PHASE3-ACCEPTANCE.md)。
+
 ## 交付范围
 
 这是可运行的 Web/PWA 与 Capacitor 接入基础。真实媒体读取、扫描、端侧模型、原生数据库与原图操作不属于本阶段。

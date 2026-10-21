@@ -8,6 +8,7 @@ export interface Photo {
   location: string
   category: Category
   tags: string[]
+  manualTags?: string[]
   favorite: boolean
   width: number
   height: number

@@ -4,6 +4,7 @@ import { nextTick, onUnmounted, ref, watch } from 'vue'
 import type { Photo } from '../domain/models'
 import { useLibrary } from '../stores/library'
 import PhotoThumbnail from './PhotoThumbnail.vue'
+import TagEditor from './TagEditor.vue'
 withDefaults(defineProps<{ photos: Photo[]; compact?: boolean }>(), { compact: false })
 const library = useLibrary()
 const selected = ref<Photo | null>(null)
@@ -23,7 +24,11 @@ function close() {
 watch(
   () => library.photos,
   (photos) => {
-    if (selected.value && !photos.some((p) => p.id === selected.value?.id)) close()
+    if (selected.value) {
+      const current = photos.find((p) => p.id === selected.value?.id)
+      if (!current) close()
+      else selected.value = current
+    }
   },
 )
 onUnmounted(() => dialog.value?.close())
@@ -95,6 +100,7 @@ onUnmounted(() => dialog.value?.close())
             library.photos.find((p) => p.id === selected?.id)?.favorite ? '取消收藏' : '收藏这一刻'
           }}
         </button>
+        <TagEditor :photo-id="selected.id" />
         <p class="fine-print">
           <ShieldCheck :size="14" />
           {{

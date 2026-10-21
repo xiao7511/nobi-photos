@@ -6,6 +6,7 @@ import config from '../capacitor.config.ts'
 
 assert.equal(config.appId, 'app.nobi.photos')
 assert.equal(config.webDir, 'dist')
+assert.equal(config.loggingBehavior, 'none')
 assert.equal(config.server?.url, undefined)
 assert.equal(config.server?.cleartext, undefined)
 assert.equal(config.plugins?.CapacitorSQLite.iosDatabaseLocation, 'Library/NoCloud')
