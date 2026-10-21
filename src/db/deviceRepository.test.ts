@@ -41,6 +41,39 @@ async function index(repo: DevicePhotoRepository, id: string, photos: DevicePhot
   await repo.commitScan(id)
 }
 describe('device SQLite index and migration v2', () => {
+  it('saves reviewed AI albums atomically, merges members, and preserves manual edits', async () => {
+    const { repo } = setup()
+    await index(repo, 'smart', [photo('a'), photo('b')])
+    await repo.saveTags('device:a', ['手动保留'])
+    await repo.setFavorite('device:a', true)
+    await repo.saveSmartAlbums([
+      { key: 'nature', name: 'ignored', photoIds: ['device:a'], confidence: 0.9 },
+    ])
+    await repo.saveAlbum({ id: 'user:smart:nature', name: '改过的名字', photoIds: ['device:a'] })
+    await repo.saveSmartAlbums([
+      { key: 'nature', name: 'ignored', photoIds: ['device:b'], confidence: 0.9 },
+    ])
+    expect(await repo.listAlbums()).toEqual([
+      { id: 'user:smart:nature', name: '改过的名字', photoIds: ['device:a', 'device:b'] },
+    ])
+    expect((await repo.list())[0]).toMatchObject({ favorite: true, manualTags: ['手动保留'] })
+  })
+  it('rolls back all suggested albums when a later album insert fails', async () => {
+    const { repo, db } = setup()
+    await index(repo, 'smart', [photo('a')])
+    db.exec(
+      "CREATE TRIGGER fail_smart BEFORE INSERT ON albums WHEN NEW.id='user:smart:food' BEGIN SELECT RAISE(ABORT, 'test failure'); END",
+    )
+    await expect(
+      repo.saveSmartAlbums([
+        { key: 'nature', name: 'n', photoIds: ['device:a'], confidence: 0.9 },
+        { key: 'food', name: 'f', photoIds: ['device:a'], confidence: 0.9 },
+      ]),
+    ).rejects.toThrow('test failure')
+    expect(await repo.listAlbums()).toEqual([])
+    expect(db.prepare('SELECT COUNT(*) AS n FROM album_photos').get()?.n).toBe(0)
+    expect(await repo.list()).toHaveLength(1)
+  })
   it('rolls back every photo in a native batch when a later SQL write fails', async () => {
     const { repo, db } = setup()
     await index(repo, 'batch', [photo('a'), photo('b')])

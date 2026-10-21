@@ -47,6 +47,7 @@ public class NobiPhotoLibraryPlugin extends Plugin {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private List<String> snapshot;
     private String session;
+    private LocalImageClassifier classifier;
     private static final Uri COLLECTION = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
     private String iso(long millis) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
@@ -152,5 +153,36 @@ public class NobiPhotoLibraryPlugin extends Plugin {
         } catch (SecurityException error) { throw error; }
           catch (Exception error) { call.resolve(new JSObject().put("dataUrl", "")); }
     }); }
-    @Override protected void handleOnDestroy() { worker.shutdownNow(); snapshot = null; session = null; }
+    @PluginMethod public void classify(PluginCall call) { run(call, () -> {
+        requireAccess(); String id = call.getString("assetId", "");
+        if (!id.matches("[0-9]+")) throw new IllegalArgumentException();
+        Uri uri = ContentUris.withAppendedId(COLLECTION, Long.parseLong(id));
+        Bitmap bitmap = null;
+        try {
+            if (Build.VERSION.SDK_INT >= 29) bitmap = getContext().getContentResolver().loadThumbnail(uri, new Size(512, 512), null);
+            else {
+                BitmapFactory.Options bounds = new BitmapFactory.Options(); bounds.inJustDecodeBounds = true;
+                try (InputStream input = getContext().getContentResolver().openInputStream(uri)) { BitmapFactory.decodeStream(input, null, bounds); }
+                BitmapFactory.Options options = new BitmapFactory.Options(); options.inSampleSize = 1;
+                while (Math.max(bounds.outWidth, bounds.outHeight) / options.inSampleSize > 512) options.inSampleSize *= 2;
+                try (InputStream input = getContext().getContentResolver().openInputStream(uri)) { bitmap = BitmapFactory.decodeStream(input, null, options); }
+            }
+            if (bitmap == null) throw new IllegalStateException();
+            if (classifier == null) classifier = new LocalImageClassifier(getContext().getAssets());
+            JSObject result = classifier.classify(bitmap);
+            requireAccess();
+            // A limited-access change may leave the general permission granted.
+            try (Cursor check = getContext().getContentResolver().query(uri, new String[]{"_id"}, null, null, null)) {
+                if (check == null || !check.moveToFirst()) throw new SecurityException();
+            }
+            call.resolve(result);
+        } catch (SecurityException error) { throw error; }
+          catch (Exception error) { call.reject("Local AI unavailable for this image", "LOCAL_AI_FAILED"); }
+        finally { if (bitmap != null) bitmap.recycle(); }
+    }); }
+    @Override protected void handleOnDestroy() {
+        // Serialize release with any inference in progress.
+        worker.execute(() -> { if (classifier != null) { classifier.close(); classifier = null; } });
+        worker.shutdown(); snapshot = null; session = null;
+    }
 }

@@ -9,6 +9,11 @@ export interface DevicePhoto {
   bytes: number
   bytesKnown: boolean
 }
+export interface PhotoIntelligenceBridge {
+  classify(options: {
+    assetId: string
+  }): Promise<{ engine: string; labels: { label: string; confidence: number }[] }>
+}
 export interface PhotoLibraryBridge {
   getAccess(): Promise<{ status: LibraryAccess }>
   requestAccess(): Promise<{ status: LibraryAccess }>

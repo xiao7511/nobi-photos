@@ -14,11 +14,17 @@ export default ts.config(
     ],
   },
   js.configs.recommended,
+  {
+    files: ['scripts/generate-icons.mjs'],
+    languageOptions: {
+      globals: { Image: 'readonly', document: 'readonly', btoa: 'readonly', Buffer: 'readonly' },
+    },
+  },
   ...ts.configs.recommended,
   ...vue.configs['flat/recommended'],
   // These globals occur only inside functions evaluated in the Android WebView.
   {
-    files: ['scripts/native-smoke.mjs', 'scripts/phone-smoke.mjs'],
+    files: ['scripts/native-smoke.mjs', 'scripts/phone-smoke.mjs', 'scripts/native-ai-smoke.mjs'],
     languageOptions: {
       globals: {
         document: 'readonly',

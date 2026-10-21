@@ -10,6 +10,8 @@ import { DemoOrganizationRepository } from '../services/demoOrganization'
 import type { OrganizationRepository, UserAlbum } from '../domain/organization'
 import { useAnalysis } from './analysis'
 import type { BatchEdit } from '../domain/batchEdit'
+import { useSmartOrganization } from './smartOrganization'
+import type { SmartSuggestion } from '../domain/smartOrganization'
 
 export const useLibrary = defineStore('library', () => {
   const photos = ref<Photo[]>([])
@@ -23,6 +25,7 @@ export const useLibrary = defineStore('library', () => {
   let foreground = true
   let revision = ''
   const analysis = useAnalysis()
+  const smart = useSmartOrganization()
   // Storage access occurs inside actions so private-mode denial is recoverable.
   const repository = new LocalPhotoRepository({
     getItem: (key) => window.localStorage.getItem(key),
@@ -53,6 +56,7 @@ export const useLibrary = defineStore('library', () => {
           .join('|')
         if (nextRevision !== revision) {
           analysis.reset()
+          smart.reset()
           revision = nextRevision
         }
         photos.value = loaded
@@ -69,6 +73,7 @@ export const useLibrary = defineStore('library', () => {
         photos.value = []
         albums.value = []
         analysis.reset()
+        smart.reset()
       }
     } finally {
       if (version === loadVersion) loading.value = false
@@ -98,6 +103,7 @@ export const useLibrary = defineStore('library', () => {
     error.value = ''
     notice.value = ''
     analysis.reset()
+    smart.reset()
     try {
       if (isNative) {
         if (!clear) throw new Error('原生端不加载示例')
@@ -121,6 +127,7 @@ export const useLibrary = defineStore('library', () => {
     photos.value = []
     albums.value = []
     analysis.reset()
+    smart.reset()
     try {
       await device.startScan()
       await load()
@@ -135,6 +142,7 @@ export const useLibrary = defineStore('library', () => {
     photos.value = []
     albums.value = []
     analysis.reset()
+    smart.reset()
     loading.value = false
   }
   function activate() {
@@ -185,6 +193,18 @@ export const useLibrary = defineStore('library', () => {
       `已更新 ${new Set(selected).size} 张照片的本地整理记录`,
     )
   }
+  function saveSmartAlbums(suggestions: SmartSuggestion[]) {
+    const selected = suggestions.map((s) => ({ ...s, photoIds: [...s.photoIds] }))
+    return organize(async (repo) => {
+      const current = isNative ? await device.readPhotos() : photos.value
+      if (isNative && !foreground) throw new Error('应用已进入后台，请返回后重试')
+      const available = new Set(current.map((p) => p.id))
+      if (selected.some((s) => s.photoIds.some((id) => !available.has(id))))
+        throw new Error('部分照片已不可访问，请重新分析')
+      await repo.saveSmartAlbums(selected)
+      smart.reset()
+    }, `已保存 ${selected.length} 个智能建议相册，原图未修改`)
+  }
   return {
     photos,
     albums,
@@ -204,5 +224,6 @@ export const useLibrary = defineStore('library', () => {
     deleteAlbum,
     saveTags,
     editBatch,
+    saveSmartAlbums,
   }
 })

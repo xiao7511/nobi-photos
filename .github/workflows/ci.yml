@@ -40,6 +40,7 @@ jobs:
         working-directory: android
   ios:
     runs-on: macos-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,4 +50,31 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx cap sync ios
-      - run: xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+      - name: Prepare isolated simulator and synthetic library
+        run: |
+          mkdir -p artifacts
+          xcodebuild -version
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for v in d["devices"].values() for x in v if x["name"].startswith("iPhone")))')
+          echo "NOBI_SIM_UDID=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          node scripts/generate-ios-fixtures.mjs
+          xcrun simctl addmedia "$DEVICE" artifacts/ios-fixtures/*.png
+      - name: Build native app and UI tests
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme Nobi -configuration Debug -destination "platform=iOS Simulator,id=$NOBI_SIM_UDID" -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build-for-testing | tee artifacts/ios-build.log
+          ditto -c -k --keepParent ios/DerivedData/Build/Products/Debug-iphonesimulator/App.app artifacts/NOBI-Photos-ios-simulator.zip
+          xcrun simctl install "$NOBI_SIM_UDID" ios/DerivedData/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl privacy "$NOBI_SIM_UDID" grant photos app.nobi.photos
+      - name: Validate real PhotoKit, SQLite, Vision and app UI
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme Nobi -configuration Debug -destination "platform=iOS Simulator,id=$NOBI_SIM_UDID" -derivedDataPath ios/DerivedData -parallel-testing-enabled NO -resultBundlePath artifacts/ios-ui.xcresult CODE_SIGNING_ALLOWED=NO test-without-building | tee artifacts/ios-test.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-simulator-and-validation
+          path: |
+            artifacts/NOBI-Photos-ios-simulator.zip
+            artifacts/ios-build.log
+            artifacts/ios-test.log
+            artifacts/ios-ui.xcresult

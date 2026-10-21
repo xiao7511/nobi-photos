@@ -8,5 +8,5 @@ let package = Package(
     targets: [.target(name: "NobiPhotoLibrary", dependencies: [
         .product(name: "Capacitor", package: "capacitor-swift-pm"),
         .product(name: "Cordova", package: "capacitor-swift-pm")
-    ], path: "ios/Sources/NobiPhotoLibrary", linkerSettings: [.linkedFramework("Photos")])]
+    ], path: "ios/Sources/NobiPhotoLibrary", linkerSettings: [.linkedFramework("Photos"), .linkedFramework("Vision")])]
 )

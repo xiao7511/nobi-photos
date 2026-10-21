@@ -2,6 +2,7 @@ import Foundation
 import Capacitor
 import Photos
 import UIKit
+import Vision
 
 @objc(NobiPhotoLibraryPlugin)
 public class NobiPhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -15,7 +16,8 @@ public class NobiPhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "readPage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "endSnapshot", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "filterAccessible", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "thumbnail", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "thumbnail", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "classify", returnType: CAPPluginReturnPromise)
     ]
     private let worker = DispatchQueue(label: "app.nobi.photos.library")
     private var snapshot: [String]?
@@ -107,6 +109,36 @@ public class NobiPhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 let data = image?.jpegData(compressionQuality: 0.75)
                 call.resolve(["dataUrl": data.map { "data:image/jpeg;base64," + $0.base64EncodedString() } ?? ""])
             }
+        }
+    }
+    @objc func classify(_ call: CAPPluginCall) {
+        worker.async {
+            guard self.permitted() else { call.reject("Photo permission changed", "PERMISSION_DENIED"); return }
+            guard let id = call.getString("assetId"),
+                  let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else {
+                call.reject("Local image unavailable", "LOCAL_AI_FAILED"); return
+            }
+            let options = PHImageRequestOptions()
+            options.isNetworkAccessAllowed = false
+            options.isSynchronous = true
+            options.deliveryMode = .highQualityFormat
+            options.resizeMode = .fast
+            var preview: UIImage?
+            PHImageManager.default().requestImage(for: asset, targetSize: CGSize(width: 512, height: 512), contentMode: .aspectFit, options: options) { image, _ in preview = image }
+            guard let image = preview, let data = image.jpegData(compressionQuality: 0.9) else {
+                call.reject("Local preview unavailable; cloud downloads disabled", "LOCAL_AI_FAILED"); return
+            }
+            do {
+                // Vision's system classifier executes on-device; no model or image network request.
+                let request = VNClassifyImageRequest()
+                let handler = VNImageRequestHandler(data: data, options: [:])
+                try handler.perform([request])
+                guard self.permitted(), PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject != nil else {
+                    call.reject("Photo permission changed", "PERMISSION_DENIED"); return
+                }
+                let labels = (request.results ?? []).prefix(5).map { ["label": $0.identifier, "confidence": Double($0.confidence)] as [String: Any] }
+                call.resolve(["engine": "apple-vision", "labels": labels])
+            } catch { call.reject("Local classification failed", "LOCAL_AI_FAILED") }
         }
     }
 }

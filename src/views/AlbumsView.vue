@@ -6,6 +6,7 @@ import PhotoGrid from '../components/PhotoGrid.vue'
 import PhotoThumbnail from '../components/PhotoThumbnail.vue'
 import type { Category } from '../domain/models'
 import AlbumEditor from '../components/AlbumEditor.vue'
+import SmartOrganization from '../components/SmartOrganization.vue'
 const library = useLibrary()
 const selected = ref<Category | '收藏' | null>(null)
 const selectedUser = ref(''),
@@ -61,6 +62,7 @@ const visible = computed(() =>
     </div>
     <button class="button primary" @click="editor?.open()"><Plus :size="17" /> 新建相册</button>
   </section>
+  <SmartOrganization />
   <div class="feature-panel soft">
     <FolderHeart :size="35" />
     <div>

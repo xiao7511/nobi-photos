@@ -1,6 +1,16 @@
 /* App shell uses native system-bar insets. No desktop sidebar at any orientation. */
 .native-app {
   overscroll-behavior: none;
+  --app-safe-top: 0px;
+  --app-safe-bottom: 0px;
+  --app-safe-left: 0px;
+  --app-safe-right: 0px;
+}
+.ios-app {
+  --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --app-safe-left: env(safe-area-inset-left, 0px);
+  --app-safe-right: env(safe-area-inset-right, 0px);
 }
 .native-app body {
   min-width: 0;
@@ -15,8 +25,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 60px;
-  padding: 0 16px;
+  height: calc(60px + var(--app-safe-top));
+  padding: var(--app-safe-top) calc(16px + var(--app-safe-right)) 0
+    calc(16px + var(--app-safe-left));
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
@@ -51,7 +62,8 @@
 }
 .native-app main {
   max-width: 900px;
-  padding: 18px 16px 96px;
+  padding: 18px calc(16px + var(--app-safe-right)) calc(96px + var(--app-safe-bottom))
+    calc(16px + var(--app-safe-left));
 }
 .native-app .mobile-nav {
   display: flex;
@@ -59,8 +71,9 @@
   inset: auto 0 0;
   z-index: 30;
   justify-content: space-around;
-  height: 72px;
-  padding: 6px 8px 8px;
+  height: calc(72px + var(--app-safe-bottom));
+  padding: 6px calc(8px + var(--app-safe-right)) calc(8px + var(--app-safe-bottom))
+    calc(8px + var(--app-safe-left));
   background: var(--surface);
   border-top: 1px solid var(--border);
 }
@@ -257,7 +270,7 @@
 }
 .native-app .toast {
   left: 50%;
-  bottom: 88px;
+  bottom: calc(88px + var(--app-safe-bottom));
   max-width: calc(100vw - 24px);
 }
 @media (min-width: 680px) {

@@ -234,7 +234,7 @@ try {
         }
       })
       assert.equal(runtime.appId, 'app.nobi.photos')
-      assert.equal(runtime.version, '0.4.1')
+      assert.equal(runtime.version, '0.5.0')
       assert.equal(runtime.sqliteVersion, 2)
       const result = {
         checkedAt: new Date().toISOString(),

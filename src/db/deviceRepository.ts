@@ -6,6 +6,7 @@ import { normalizeTags, validateAlbum } from '../domain/organization'
 import type { UserAlbum } from '../domain/organization'
 import { planBatch } from '../domain/batchEdit'
 import type { BatchEdit } from '../domain/batchEdit'
+import { planSmartAlbums, type SmartSuggestion } from '../domain/smartOrganization'
 export interface SqlCommand {
   statement: string
   values: (string | number | null)[]
@@ -272,5 +273,26 @@ export class DevicePhotoRepository implements ScanRepository {
     await this.driver.batch([
       command('INSERT OR REPLACE INTO local_settings(key,value) VALUES (?,?)', [key, value]),
     ])
+  }
+  async saveSmartAlbums(suggestions: SmartSuggestion[]) {
+    const plan = planSmartAlbums(suggestions, await this.list(), await this.listAlbums())
+    const commands: SqlCommand[] = []
+    for (const album of plan.albums) {
+      commands.push(
+        command(
+          "INSERT INTO albums(id,name,kind) VALUES (?,?,'manual') ON CONFLICT(id) DO NOTHING",
+          [album.id, album.name],
+        ),
+      )
+      for (const id of album.photoIds)
+        commands.push(
+          command('INSERT OR IGNORE INTO album_photos(album_id,photo_id) VALUES (?,?)', [
+            album.id,
+            id,
+          ]),
+        )
+    }
+    // One native transaction: all selected suggestions are saved or none are.
+    await this.driver.batch(commands)
   }
 }

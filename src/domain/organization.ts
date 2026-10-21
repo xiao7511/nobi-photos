@@ -1,4 +1,5 @@
 import type { BatchEdit } from './batchEdit'
+import type { SmartSuggestion } from './smartOrganization'
 export interface UserAlbum {
   id: string
   name: string
@@ -10,6 +11,7 @@ export interface OrganizationRepository {
   deleteAlbum(id: string): Promise<void>
   saveTags(photoId: string, tags: string[]): Promise<void>
   editBatch(photoIds: string[], edit: BatchEdit): Promise<void>
+  saveSmartAlbums(suggestions: SmartSuggestion[]): Promise<void>
 }
 export function normalizeName(value: string): string {
   const name = value.normalize('NFC').trim()

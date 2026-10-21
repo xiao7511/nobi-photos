@@ -5,6 +5,7 @@ import { normalizeTags, validateAlbum } from '../domain/organization'
 import type { OrganizationRepository, UserAlbum } from '../domain/organization'
 import { planBatch } from '../domain/batchEdit'
 import type { BatchEdit } from '../domain/batchEdit'
+import { planSmartAlbums, type SmartSuggestion } from '../domain/smartOrganization'
 export interface DemoOrganization {
   albums: UserAlbum[]
   tags: Record<string, string[]>
@@ -126,6 +127,19 @@ export class DemoOrganizationRepository implements OrganizationRepository {
       state.organization.albums = state.organization.albums.map((a) =>
         a.id === plan.album!.id ? plan.album! : a,
       )
+    this.storage.setItem(METADATA_KEY, JSON.stringify(state))
+  }
+  async saveSmartAlbums(suggestions: SmartSuggestion[]) {
+    const state = this.read()
+    const plan = planSmartAlbums(
+      suggestions,
+      state.cleared ? [] : createDemoPhotos(),
+      state.organization.albums,
+    )
+    state.organization.albums = [
+      ...state.organization.albums.filter((a) => !plan.albums.some((next) => next.id === a.id)),
+      ...plan.albums,
+    ]
     this.storage.setItem(METADATA_KEY, JSON.stringify(state))
   }
 }
