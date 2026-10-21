@@ -24,18 +24,24 @@ const browser = await chromium.launch({ channel: process.env.NOBI_BROWSER_CHANNE
 try {
   const page = await browser.newPage()
   async function png(path, size, adaptive = false, rgb = false) {
+    const round = path.endsWith('ic_launcher_round.png')
     const svg = adaptive
       ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108"><g transform="translate(6 6) scale(1.5)">${source.match(/<g[\s\S]*<\/g>/)[0]}</g></svg>`
       : source
     const data = await page.evaluate(
-      async ({ svg, size, adaptive, rgb }) => {
+      async ({ svg, size, rgb, round }) => {
         const image = new Image()
         image.src = `data:image/svg+xml;base64,${btoa(svg)}`
         await image.decode()
         const canvas = document.createElement('canvas')
         canvas.width = canvas.height = size
         const ctx = canvas.getContext('2d')
-        if (!adaptive) {
+        if (round) {
+          ctx.beginPath()
+          ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+          ctx.clip()
+        }
+        if (rgb || round) {
           ctx.fillStyle = '#214f42'
           ctx.fillRect(0, 0, size, size)
         }
@@ -58,7 +64,7 @@ try {
         }
         return canvas.toDataURL('image/png').split(',')[1]
       },
-      { svg, size, adaptive, rgb },
+      { svg, size, rgb, round },
     )
     if (rgb) {
       const head = Buffer.alloc(13)
