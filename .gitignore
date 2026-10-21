@@ -16,6 +16,8 @@ artifacts/
 **/.gradle/
 *.jks
 *.keystore
+secrets/
+*.dump
 android/.gradle/
 android/**/build/
 android/local.properties

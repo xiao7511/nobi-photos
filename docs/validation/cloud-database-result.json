@@ -1,0 +1,11 @@
+{
+  "verified_at": "2026-10-21T22:02:15.350155+08:00",
+  "database": "nobi_photos_cloud",
+  "server_version": "17.6",
+  "migration_version": 202610210001,
+  "business_table_count": 0,
+  "runtime_superuser": false,
+  "runtime_bypass_rls": false,
+  "anonymous_business_usage": false,
+  "runtime_ops_usage": false
+}

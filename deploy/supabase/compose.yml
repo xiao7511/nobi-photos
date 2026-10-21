@@ -1,0 +1,85 @@
+# Database layer only. No client upload/sync, Auth, REST, Storage or Studio service.
+name: nobi-photos-cloud
+services:
+  db:
+    image: supabase/postgres:17.6.1.136@sha256:f371b5f3f2ac0a05703f33d6e6134515fb2498cab708fb948a0aeb7481467c00
+    container_name: nobi-photos-cloud-db
+    restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.50
+    pids_limit: 200
+    shm_size: 64m
+    stop_grace_period: 30s
+    ports:
+      - '127.0.0.1:15432:5432'
+    environment:
+      POSTGRES_USER: supabase_admin
+      POSTGRES_DB: postgres
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_PORT: '5432'
+      POSTGRES_PASSWORD_FILE: /run/secrets/admin_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    secrets:
+      - admin_password
+      - app_password
+    volumes:
+      - data:/var/lib/postgresql/data
+      - db_config:/etc/postgresql-custom
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./init-business.sh:/docker-entrypoint-initdb.d/zz-nobi-photos.sh:ro
+      - ./business.sql:/nobi/business.sql:ro
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - shared_buffers=64MB
+      - -c
+      - work_mem=2MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - max_connections=30
+      - -c
+      - max_parallel_workers=1
+      - -c
+      - max_parallel_workers_per_gather=0
+      - -c
+      - log_statement=none
+      - -c
+      - log_min_error_statement=panic
+      - -c
+      - password_encryption=scram-sha-256
+    healthcheck:
+      test:
+        ['CMD', 'pg_isready', '-h', '127.0.0.1', '-U', 'supabase_admin', '-d', 'nobi_photos_cloud']
+      interval: 10s
+      timeout: 5s
+      start_period: 90s
+      retries: 12
+    logging:
+      driver: json-file
+      options:
+        max-size: '5m'
+        max-file: '2'
+    networks:
+      - database
+networks:
+  database:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: '127.0.0.1'
+volumes:
+  data:
+    name: nobi_photos_cloud_data
+    labels:
+      com.nobi.project: nobi-photos
+  db_config:
+    name: nobi_photos_cloud_config
+    labels:
+      com.nobi.project: nobi-photos
+secrets:
+  admin_password:
+    file: ./secrets/admin_password
+  app_password:
+    file: ./secrets/app_password
