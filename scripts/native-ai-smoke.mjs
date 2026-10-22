@@ -90,7 +90,13 @@ try {
     'Public parrot reference must have a confident bird prediction',
   )
   console.log('Bundled model identified public parrot reference in airplane mode')
+  // The compact connection panel disappears once an existing index finishes loading.
+  // Privacy always owns the full scan controls, making reruns exercise the same explicit UI.
+  await page.evaluate(() => {
+    location.hash = '/privacy'
+  })
   await page.getByRole('button', { name: '立即扫描', exact: true }).click()
+  await page.locator('.mobile-nav a[href="#/"]').click()
   await page.waitForFunction(() => document.querySelectorAll('.photo-card').length === 102)
   await page.locator('.mobile-nav a[href="#/albums"]').click()
   await page.getByRole('button', { name: '开始智能整理', exact: true }).click()

@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-22T14:48:16.986Z",
+  "sourceCommit": "b7e49ebb1532eb0671bf3d7f7b5f6223bf6e874d",
+  "platform": "Android API 34 dedicated emulator",
+  "dimensions": {
+    "width": 4032,
+    "height": 3024
+  },
+  "sha256": "bb348f053a3107f0b838e76471c89e5c3b509b282cb5d4c2c426e396725ffb6b",
+  "identicalOriginalBytes": true,
+  "zoomScroll": true,
+  "sequentialNavigation": true,
+  "pendingReleaseCleanup": true,
+  "closedViewerCleanup": true,
+  "airplaneMode": true,
+  "wifiDisabled": true,
+  "privatePhotos": false,
+  "status": "passed"
+}

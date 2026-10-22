@@ -1,0 +1,58 @@
+{
+  "checkedAt": "2026-10-22T15:07:00Z",
+  "sourceCommit": "b7e49ebb1532eb0671bf3d7f7b5f6223bf6e874d",
+  "workflowRun": 39797854518,
+  "workflowUrl": "https://github.com/xiao7511/nobi-photos/actions/runs/39797854518",
+  "platform": "GitHub macOS runner / iPhone 17 Pro Simulator / iOS 26.5",
+  "xcode": "26.6",
+  "version": "0.6.0",
+  "build": 7,
+  "verifyJob": "success",
+  "androidJob": "success",
+  "iosSteps": {
+    "nativeSimulatorBuild": "success",
+    "nativeUiTests": "success",
+    "unsignedArm64Archive": "success",
+    "artifactUpload": "success",
+    "completeJob": "success"
+  },
+  "uiTests": {
+    "executed": 2,
+    "failures": 0,
+    "nativeLibraryOriginalViewerAndOnDeviceAI": "passed",
+    "tabsThemePrivacyAndKeyboard": "passed"
+  },
+  "media": {
+    "generatedFixtures": 101,
+    "generatedDimensions": { "width": 768, "height": 512 },
+    "simulatorStockImages": 6,
+    "indexedPhotos": 107,
+    "privatePhotos": false
+  },
+  "checks": {
+    "localOriginalResourceRead": true,
+    "imageDecodedBeforeOriginalLabel": true,
+    "zoomAndFit": true,
+    "sequentialNavigation": true,
+    "photoKitPagination": true,
+    "nativeSqliteColdStartCountUnchanged": true,
+    "nativeAppleVision": true,
+    "fiveTabsHittable": true,
+    "themeSwitchState": true,
+    "privacyNavigation": true,
+    "keyboard": true
+  },
+  "artifact": {
+    "id": 12435601456,
+    "bytes": 15813612,
+    "sha256": "2b8b9d2fb78885b6f2bc296582587cceae0cc9b55f314bd80e91cb187d39c1a9",
+    "downloadedSha256Matches": true,
+    "expiresAt": "2027-01-20T14:41:19Z"
+  },
+  "notVerified": [
+    "physical iPhone or signed IPA",
+    "iOS limited-scope permission changes",
+    "all image formats, very large libraries, real-device performance"
+  ],
+  "status": "build-tests-and-archive-passed"
+}
