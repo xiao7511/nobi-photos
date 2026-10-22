@@ -6,13 +6,20 @@ final class NobiUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication(bundleIdentifier: "app.nobi.photos")
+        addUIInterruptionMonitor(withDescription: "Full access to isolated synthetic photo library") { alert in
+            let allow = alert.buttons.matching(NSPredicate(format: "label MATCHES[c] %@", ".*(Allow Full Access|Allow Access to All Photos|Allow All Photos|允许完全访问|允许访问所有照片|允许所有照片|允许全部照片).*" )).firstMatch
+            if allow.exists { allow.tap(); return true }
+            print("NOBI_UNHANDLED_SYSTEM_ALERT\n" + alert.debugDescription)
+            return false
+        }
         app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launch()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 45))
     }
     override func tearDownWithError() throws {
-        if testRun?.hasSucceeded == false {
+        if (testRun?.failureCount ?? 0) > 0 {
             print("NOBI_TEST_FAILURE_HIERARCHY\n" + app.debugDescription)
+            print("NOBI_SYSTEM_FAILURE_HIERARCHY\n" + XCUIApplication(bundleIdentifier: "com.apple.springboard").debugDescription)
             let shot = XCTAttachment(screenshot: app.screenshot())
             shot.name = "ios-failure-synthetic-library"
             shot.lifetime = .keepAlways
@@ -34,9 +41,13 @@ final class NobiUITests: XCTestCase {
             let consent = app.webViews.buttons["继续系统授权"].firstMatch
             XCTAssertTrue(consent.waitForExistence(timeout: 20))
             consent.tap()
-            let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-            let fullAccess = system.buttons.matching(NSPredicate(format: "label MATCHES[c] %@", ".*(Allow Full Access|允许完全访问|允许访问所有照片|允许所有照片|允许全部照片).*" )).firstMatch
-            if fullAccess.waitForExistence(timeout: 15) { fullAccess.tap() }
+            // A normal, harmless navigation action lets XCTest's interruption monitor
+            // handle the system sheet, even when the hosted simulator exposes it late.
+            let granted = text("已授权照片读取")
+            for _ in 0..<6 {
+                app.webViews.links["照片"].firstMatch.tap()
+                if granted.waitForExistence(timeout: 5) || text("107 张本机照片").exists { break }
+            }
         }
         // The hosted simulator can include Apple's six stock images in addition to our 101 fixtures.
         // Require enough real assets to cross the 100-item page boundary, then retain the exact total.
