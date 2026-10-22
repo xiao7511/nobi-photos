@@ -33,7 +33,27 @@ public class NobiPhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private func permitted() -> Bool { let status = access(); return status == "granted" || status == "limited" }
     @objc func getAccess(_ call: CAPPluginCall) { call.resolve(["status": access()]) }
     @objc func requestAccess(_ call: CAPPluginCall) {
-        PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in call.resolve(["status": self.access()]) }
+        PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in
+            DispatchQueue.main.async { self.resolveAccessWhenActive(call, attempts: 0) }
+        }
+    }
+    private func resolveAccessWhenActive(_ call: CAPPluginCall, attempts: Int) {
+        // PhotoKit can finish before the permission sheet's inactive state ends.
+        // Let the app-state listener restore foreground access before JS starts its explicit scan.
+        if UIApplication.shared.applicationState == .active {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                if UIApplication.shared.applicationState == .active {
+                    call.resolve(["status": self.access()])
+                } else { self.resolveAccessWhenActive(call, attempts: attempts + 1) }
+            }
+        } else if attempts < 50 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.resolveAccessWhenActive(call, attempts: attempts + 1)
+            }
+        } else {
+            // Never start background work; JS keeps its foreground guard and offers manual scanning.
+            call.resolve(["status": self.access()])
+        }
     }
     @objc func openSettings(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
