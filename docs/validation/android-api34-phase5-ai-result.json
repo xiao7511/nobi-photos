@@ -1,0 +1,35 @@
+{
+  "checkedAt": "2026-10-22T01:44:41.654Z",
+  "platform": "Android 14 AOSP API 34",
+  "engine": "mobilenet-v2-int8",
+  "publicReferencePrediction": [
+    {
+      "label": "macaw",
+      "confidence": 0.99609375
+    },
+    {
+      "label": "tench, Tinca tinca",
+      "confidence": 0
+    },
+    {
+      "label": "goldfish, Carassius auratus",
+      "confidence": 0
+    },
+    {
+      "label": "great white shark, white shark, man-eater, man-eating shark, Carcharodon carcharias",
+      "confidence": 0
+    },
+    {
+      "label": "tiger shark, Galeocerdo cuvieri",
+      "confidence": 0
+    }
+  ],
+  "source": "101 synthetic images plus 1 public Google Coral parrot reference",
+  "airplaneMode": true,
+  "wifiDisabled": true,
+  "reviewedAlbumSaved": true,
+  "nativeSqlite": true,
+  "coldStartPersistence": true,
+  "privatePhotos": false,
+  "status": "passed"
+}

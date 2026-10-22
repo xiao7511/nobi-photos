@@ -1,0 +1,18 @@
+{
+  "platform": "Android 14 AOSP API 34",
+  "serial": "emulator-5580",
+  "photos": 101,
+  "initialPermission": "prompt",
+  "systemDenial": true,
+  "systemFullGrant": true,
+  "nativeSqlite": true,
+  "nativeThumbnails": true,
+  "persistedFavorite": true,
+  "nativeOrganizationAndAnalysis": true,
+  "phase4BatchSearchLifecycle": true,
+  "backgroundHiddenAndRestored": true,
+  "airplaneModeColdStart": true,
+  "permissionRevocationClearsIndex": true,
+  "source": "synthetic",
+  "status": "passed"
+}

@@ -1,6 +1,6 @@
 # NOBI Photos · Nobi 相册
 
-本地优先、无需注册的移动相册。当前版本 **0.4.0 / Phase 4**：原生照片读取、本地 SQLite 索引、自建相册、手动标签、本地相似照片建议，以及批量整理与组合搜索。
+本地优先、无需注册的移动相册。当前版本 **0.5.0 / Phase 5**：原生照片读取、本地 SQLite 索引、自建相册、手动标签、本地相似照片建议、批量整理、组合搜索，以及主动运行的离线 AI 相册建议。Android、iOS 与网页共用四叶标志。
 
 浏览器保留 12 张随包 SVG 示例；真实照片功能需 Android / iOS 原生应用。二者的数据仓库独立，不混合示例和真实照片。
 
@@ -47,10 +47,10 @@ iOS（macOS）：
 
 ```sh
 npx cap open ios
-xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project ios/App/App.xcodeproj -scheme Nobi -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```
 
-原生工程源码随 Git 保存。`cap sync` 重新生成平台依赖配置和 Web 资源，不要直接修改生成的依赖清单。`android/local.properties`、构建目录、凭据、签名和运行数据不入库。CI 已配置 Web 检查、Android 构建和 macOS iOS 编译作业；本地提交不会自动触发远程 CI。
+原生工程源码随 Git 保存。`cap sync` 重新生成平台依赖配置和 Web 资源，不要直接修改生成的依赖清单。`android/local.properties`、构建目录、凭据、签名和运行数据不入库。GitHub push / pull request 触发 Web 检查、Android 构建及 macOS iOS 构建、原生 UI 测试与无签名设备归档，详见 [iOS 构建说明](docs/IOS-BUILD.md)。
 
 ## Phase 2 使用流程
 
@@ -78,10 +78,19 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -dest
 4. 搜索页展开“组合筛选”，组合关键词、日期范围、自建相册、精确手动标签、收藏与横/竖/方图条件。所有条件同时满足；日期包含首尾两天，使用索引日期。多个精确标签用逗号分隔，忽略大小写。
 5. 修改筛选后点击“搜索”；结果随当前图库与整理数据更新。条件与选择只在页面内存中，不写入历史记录、网址或数据库，可用“重置搜索”清空。
 
+## Phase 5：离线 AI 智能整理
+
+1. 分类页主动选择“开始智能整理”，每次分析最新 500 张可访问照片，可取消。Android 使用随包 MobileNet V2 / LiteRT，iOS 使用 Apple Vision；不上传照片，不下载运行模型，iCloud 照片预览也不发起网络读取。
+2. 仅接收评分至少 0.55 且匹配白名单的主题：宠物与动物、美食与饮品、自然与风景、城市与建筑、交通与出行、文档与屏幕。评分不是正确率保证，两端结果可能不同；不可靠或无法读取的照片会跳过。
+3. 勾选建议后预览相册名称与照片数量，再确认保存。默认不勾选、不自动保存；只创建或合并本应用的“智能 · 主题”相册关系，保留已有成员、改名及手动标签，不改动系统相册或原图。
+4. 建议仅保留在当前内存中，进入后台、离开页面、扫描或权限范围变化会清理。浏览器提供明确标记的预设演示，不运行图像模型。
+
+模型、标签与许可证说明见 [MODEL.md](plugins/photo-library/android/src/main/assets/nobi-ai/MODEL.md)。本功能是图片分类；自然语言语义搜索、OCR、人脸身份识别尚未接入。SQLite 仍为 v2。
+
 ## 功能与边界
 
 - 照片：日期分组、排序、密度切换、缩略预览、本地收藏；原生照片默认“未分类”。
-- 分类：自建相册、浏览器示例分类及原生未分类/收藏集合。
+- 分类：自建相册、主动运行的离线 AI 相册建议、浏览器示例分类及原生未分类/收藏集合。
 - AI 搜索：本地标题、日期、分类、地点和标签关键词；多个词与组合筛选条件取交集。未接入语义 AI。
 - 清理：主动运行本地缩略图相似度分析、进度与取消、逐组保留建议；浏览器另有明确标记的预设示例组。没有原图删除接口。
 - 我的与隐私中心：免注册、浅色/深色/跟随系统、照片权限、扫描控制、本地数据管理。
@@ -99,6 +108,8 @@ src/services/scanEngine.ts   快照分页、进度、取消、提交/丢弃状�
 src/services/similarity.ts   本地视觉指纹与非传递式建议分组
 src/domain/organization.ts  相册与标签约束、仓库接口
 src/domain/batchEdit.ts     批量整理计划、全量校验与事务适配
+src/domain/smartOrganization.ts  AI 主题白名单、阈值与相册合并计划
+src/stores/smartOrganization.ts  主动分析、取消、权限复查与内存建议
 src/composables/            页面内照片选择、筛选与权限变动时清理
 src/stores/                 Pinia、权限/前台状态、索引访问校验
 src/components/             授权说明、扫描控制、按需缩略图
@@ -125,6 +136,8 @@ Capacitor 桥接日志关闭，避免调试日志输出照片元数据或 SQL �
 代码已同步到 [GitHub](https://github.com/xiao7511/nobi-photos)。用户另外授权的云端新增业务基础库部署见 [腾讯云部署报告](docs/CLOUD-DEPLOYMENT.md) 与 [独立 Supabase Postgres 运维说明](deploy/supabase/README.md)。设备照片元数据仍在本地，尚未接入云端业务 API。
 
 - [Android APK 打包与联调验证](docs/ANDROID-PACKAGING-VALIDATION.md)
+- [Phase 5 图标、离线 AI 与 iOS 验收报告](docs/PHASE5-ACCEPTANCE.md)
+- [iOS 构建、模拟器测试与签名说明](docs/IOS-BUILD.md)
 - [Android 真机版面与独立运行环境（0.4.1）](docs/ANDROID-PHONE-VALIDATION.md)
 - [Phase 4 验收报告](docs/PHASE4-ACCEPTANCE.md)
 - [Phase 3 历史报告](docs/PHASE3-ACCEPTANCE.md)
@@ -132,7 +145,7 @@ Capacitor 桥接日志关闭，避免调试日志输出照片元数据或 SQL �
 - [原生真机验证清单](docs/NATIVE-TEST-MATRIX.md)
 - [Phase 1 历史报告](docs/PHASE1-ACCEPTANCE.md)
 
-当前 Windows 环境已在专用 Android 14 AOSP 模拟器上实际验证系统拒绝/完整授权、101 张合成图片分页读取、SQLite、缩略图、收藏、相册、标签和相似建议。Phase 4 的运行补验与剩余限制见最新验收报告。每个阶段交付后停止，等待验收。
+当前 Windows 环境已在专用 Android 14 AOSP 模拟器上实际验证系统拒绝/完整授权、101 张合成图片分页读取、SQLite、缩略图、收藏、相册、标签和相似建议；0.5.0 另以公开鹦鹉图片验证飞行模式下的真实模型识别、确认保存相册与冷启动恢复。iOS 已使用 GitHub macOS runner 构建并运行原生 UI 测试。验证范围与剩余限制见最新验收报告。每个阶段交付后停止，等待验收。
 
 ### 重跑原生冒烟验证
 
@@ -145,5 +158,7 @@ Phase 4 扩展场景：设置 `$env:NOBI_TEST_PHASE4='1'` 后运行 `npm run tes
 资源受限主机建议将专用 AVD 渲染设为 540×1200 / density 210 并关闭动画；该配置保持相同逻辑宽度。原生冷启动等待上限 90 秒，不代表产品启动性能验收标准。当前已实际通过的原生子集与未执行场景见最新报告和矩阵。
 
 Vitest 默认最多两个 worker，以便与原生模拟器共存；没有跳过测试或降低校验规则。
+
+Phase 5 AI 原生验证：先在同一专用 AVD 完成基础脚本，再运行 `node scripts/native-ai-smoke.mjs`。脚本增加一张公开 Google Coral 鹦鹉测试图，实际运行断网模型、确认保存与 SQLite 重启恢复；仅允许 `emulator-5580` / `nobi_photos_test`。测试图库不能存放私人数据。图标可用 `node scripts/generate-icons.mjs` 从 `public/favicon.svg` 重新生成。
 
 参考：[Capacitor Android 插件](https://capacitorjs.com/docs/plugins/android)、[iOS 插件](https://capacitorjs.com/docs/plugins/ios)、[Android 有限照片访问](https://developer.android.com/about/versions/14/changes/partial-photo-video-access)、[SQLite 插件](https://github.com/capacitor-community/sqlite)。

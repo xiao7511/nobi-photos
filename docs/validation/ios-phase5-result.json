@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-10-22T01:48:11Z",
+  "sourceCommit": "99533e059e5101f95fd215f52fb8a3503b110b1a",
+  "workflowRun": 39706558042,
+  "workflowUrl": "https://github.com/xiao7511/nobi-photos/actions/runs/39706558042",
+  "jobs": {
+    "verify": "success",
+    "android": "success",
+    "ios": "success"
+  },
+  "platform": "GitHub macOS runner / iPhone 17 Pro Simulator",
+  "xcode": "26.6",
+  "version": "0.5.0",
+  "build": 6,
+  "nativeSimulatorBuild": true,
+  "unsignedArm64Archive": true,
+  "uiTests": {
+    "executed": 2,
+    "failures": 0,
+    "nativeLibraryAndOnDeviceAI": "passed",
+    "tabsThemePrivacyAndKeyboard": "passed"
+  },
+  "media": {
+    "generatedFixtures": 101,
+    "simulatorStockImages": 6,
+    "indexedPhotos": 107,
+    "privatePhotos": false
+  },
+  "checks": {
+    "systemFullGrant": true,
+    "photoKitPagination": true,
+    "nativeSqliteColdStartCountUnchanged": true,
+    "nativeAppleVision": true,
+    "fiveTabsHittable": true,
+    "themeSwitchState": true,
+    "privacyNavigation": true,
+    "keyboard": true
+  },
+  "notVerified": [
+    "physical iPhone",
+    "signed IPA installation",
+    "limited access scope changes",
+    "permission denial on iOS",
+    "large personal libraries or performance"
+  ],
+  "artifact": {
+    "id": 12395384588,
+    "name": "ios-simulator-and-validation",
+    "bytes": 15618205,
+    "digest": "sha256:cfba99e46a484534bca2c0655d7184707bb539a1d76b221478b90b8286da1603",
+    "expiresAt": "2027-01-20T01:35:24Z",
+    "url": "https://github.com/xiao7511/nobi-photos/actions/runs/39706558042/artifacts/12395384588"
+  },
+  "logEvidence": [
+    "2026-10-22T01:44:39.7074260Z NOBI_INDEXED_PHOTOS 107; generated fixtures: 101; remaining assets: hosted simulator stock images",
+    "2026-10-22T01:45:26.5350930Z Test Case '-[NobiUITests.NobiUITests testNativeLibraryAndOnDeviceAI]' passed (128.096 seconds).",
+    "2026-10-22T01:45:59.5419340Z Test Case '-[NobiUITests.NobiUITests testTabsThemePrivacyAndKeyboard]' passed (33.031 seconds).",
+    "2026-10-22T01:45:59.5642230Z \t Executed 2 tests, with 0 failures (0 unexpected) in 161.127 (161.131) seconds",
+    "2026-10-22T01:46:01.7773890Z ** TEST EXECUTE SUCCEEDED **",
+    "2026-10-22T01:47:50.1052880Z ** ARCHIVE SUCCEEDED **"
+  ],
+  "status": "passed"
+}
