@@ -67,10 +67,7 @@ const { selecting, selectedIds, toggle, selectVisible, clear, exit } = usePhotoS
     <span><LockKeyhole :size="15" /> 照片与整理记录保存在本机</span>
     <RouterLink to="/privacy">管理相册 <ArrowUpRight :size="15" /></RouterLink>
   </div>
-  <LibraryConnection
-    v-if="library.isNative && !library.loading && !library.photos.length"
-    compact
-  />
+  <LibraryConnection v-if="library.isNative && !library.photos.length" compact />
   <section v-if="!library.isNative" class="memory-hero">
     <div class="hero-copy">
       <span class="hero-label"><Leaf :size="14" /> LITTLE THINGS, BIG MEMORIES</span>

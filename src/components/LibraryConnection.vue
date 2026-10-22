@@ -67,7 +67,7 @@ onUnmounted(() => consent.value?.close())
         <button
           v-if="!permitted"
           class="button primary"
-          :disabled="device.requesting || device.scanning"
+          :disabled="library.loading || device.requesting || device.scanning"
           @click="consent?.showModal()"
         >
           <Images :size="16" />{{ device.requesting ? '等待系统授权…' : '连接并读取照片' }}
@@ -75,7 +75,7 @@ onUnmounted(() => consent.value?.close())
         <button
           v-if="permitted"
           class="button"
-          :disabled="device.scanning || device.requesting"
+          :disabled="library.loading || device.scanning || device.requesting"
           @click="library.scanDevice()"
         >
           <ScanLine :size="16" /> 立即扫描

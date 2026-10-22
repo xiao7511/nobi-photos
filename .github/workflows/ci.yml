@@ -54,7 +54,7 @@ jobs:
         run: |
           mkdir -p artifacts
           xcodebuild -version
-          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for v in d["devices"].values() for x in v if x["name"].startswith("iPhone")))')
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,re,sys; d=json.load(sys.stdin); keys=sorted(d["devices"], key=lambda k:tuple(map(int,re.findall(r"\d+",k))), reverse=True); print(next(x["udid"] for k in keys if ".iOS-" in k for x in d["devices"][k] if x["name"].startswith("iPhone")))')
           echo "NOBI_SIM_UDID=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b

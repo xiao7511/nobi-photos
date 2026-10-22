@@ -15,6 +15,8 @@ final class NobiUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launch()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 45))
+        app.activate()
+        XCTAssertEqual(app.state, .runningForeground)
     }
     override func tearDownWithError() throws {
         if (testRun?.failureCount ?? 0) > 0 {
@@ -30,6 +32,7 @@ final class NobiUITests: XCTestCase {
         app.webViews.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", value)).firstMatch
     }
     func testNativeLibraryAndOnDeviceAI() throws {
+        let count = app.webViews.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]{2,} 张本机照片")).firstMatch
         let scan = app.webViews.buttons["立即扫描"].firstMatch
         if scan.waitForExistence(timeout: 10) {
             scan.tap()
@@ -37,21 +40,24 @@ final class NobiUITests: XCTestCase {
             // XCTest may reinstall the target after simctl's grant; use the real consent flow.
             let connect = app.webViews.buttons["连接并读取照片"].firstMatch
             XCTAssertTrue(connect.waitForExistence(timeout: 20))
-            connect.tap()
             let consent = app.webViews.buttons["继续系统授权"].firstMatch
-            XCTAssertTrue(consent.waitForExistence(timeout: 20))
+            for _ in 0..<3 {
+                XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true AND hittable == true"), object: connect)], timeout: 30) == .completed)
+                connect.tap()
+                if consent.waitForExistence(timeout: 10) { break }
+            }
+            XCTAssertTrue(consent.exists)
             consent.tap()
             // A normal, harmless navigation action lets XCTest's interruption monitor
             // handle the system sheet, even when the hosted simulator exposes it late.
             let granted = text("已授权照片读取")
             for _ in 0..<6 {
                 app.webViews.links["照片"].firstMatch.tap()
-                if granted.waitForExistence(timeout: 5) || text("107 张本机照片").exists { break }
+                if granted.waitForExistence(timeout: 5) || count.exists { break }
             }
         }
         // The hosted simulator can include Apple's six stock images in addition to our 101 fixtures.
         // Require enough real assets to cross the 100-item page boundary, then retain the exact total.
-        let count = app.webViews.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]{2,} 张本机照片")).firstMatch
         XCTAssertTrue(count.waitForExistence(timeout: 120))
         let indexedLabel = count.label
         let indexedCount = Int(indexedLabel.split(separator: " ").first.map(String.init) ?? "0") ?? 0
