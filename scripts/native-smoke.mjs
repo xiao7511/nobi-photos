@@ -244,6 +244,7 @@ try {
     await editor.getByRole('button', { name: '保存相册', exact: true }).click()
     await page.locator('.photo-open').first().click()
     const detail = page.getByRole('dialog', { name: '照片详情' })
+    await detail.getByRole('button', { name: '编辑标签', exact: true }).click()
     await detail.getByRole('textbox', { name: '手动标签', exact: true }).fill('原生验证')
     await detail.getByRole('button', { name: '保存标签', exact: true }).click()
     await detail.locator('.chip').filter({ hasText: '原生验证' }).waitFor()

@@ -5,6 +5,22 @@ import { normalizeName, normalizeTags } from '../domain/organization'
 import { LocalPhotoService } from './photoService'
 beforeEach(() => localStorage.clear())
 describe('offline organization and existing demo metadata', () => {
+  it('renames AI albums without replacing membership and keeps the title on subsequent AI merges', async () => {
+    const org = new DemoOrganizationRepository(localStorage)
+    await org.saveSmartAlbums([
+      { key: 'nature', name: 'ignored', photoIds: ['demo-1'], confidence: 0.9 },
+    ])
+    await org.renameAlbum('user:smart:nature', '  我的山海  ')
+    await org.saveSmartAlbums([
+      { key: 'nature', name: 'ignored', photoIds: ['demo-2'], confidence: 0.9 },
+    ])
+    expect(await org.listAlbums()).toEqual([
+      { id: 'user:smart:nature', name: '我的山海', photoIds: ['demo-1', 'demo-2'] },
+    ])
+    await expect(org.renameAlbum('user:smart:nature', '   ')).rejects.toThrow('1–40')
+    await expect(org.renameAlbum('user:missing', '名称')).rejects.toThrow('不存在')
+    expect((await org.listAlbums())[0]?.name).toBe('我的山海')
+  })
   function setup() {
     return {
       photos: new LocalPhotoRepository(localStorage),

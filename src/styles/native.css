@@ -260,14 +260,6 @@
   max-height: 85dvh;
   width: min(94vw, 680px);
 }
-.native-app .photo-dialog[open] {
-  grid-template-columns: 1fr;
-}
-.native-app .photo-dialog > img {
-  max-height: 42vh;
-  max-height: 42dvh;
-  object-fit: contain;
-}
 .native-app .toast {
   left: 50%;
   bottom: calc(88px + var(--app-safe-bottom));

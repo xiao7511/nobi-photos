@@ -21,17 +21,20 @@ function chunk(name, data) {
   return Buffer.concat([size, body, checksum])
 }
 for (let seed = 0; seed < 101; seed++) {
-  const pixels = Buffer.alloc(64 * 193)
-  for (let y = 0; y < 64; y++)
-    for (let x = 0; x < 64; x++) {
-      const p = y * 193 + 1 + x * 3
+  const width = 768,
+    height = 512,
+    stride = width * 3 + 1
+  const pixels = Buffer.alloc(height * stride)
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const p = y * stride + 1 + x * 3
       pixels[p] = (x * 4 + seed * 31) % 256
       pixels[p + 1] = (y * 4 + seed * 53) % 256
       pixels[p + 2] = ((x + y) * 2 + seed * 23) % 256
     }
   const head = Buffer.alloc(13)
-  head.writeUInt32BE(64)
-  head.writeUInt32BE(64, 4)
+  head.writeUInt32BE(width)
+  head.writeUInt32BE(height, 4)
   head[8] = 8
   head[9] = 2
   await writeFile(

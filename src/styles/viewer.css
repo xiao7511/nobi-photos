@@ -1,0 +1,139 @@
+/* A consistent dark canvas keeps the photograph prominent in either app theme. */
+dialog.photo-viewer,
+.native-app dialog.photo-viewer {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  background: #080a09;
+  color: #f7faf8;
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+.photo-viewer[open] {
+  display: flex;
+  flex-direction: column;
+}
+.viewer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: max(6px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 6px
+    max(10px, env(safe-area-inset-left));
+  min-height: 56px;
+}
+.viewer-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff0d;
+  color: inherit;
+  cursor: pointer;
+}
+.viewer-button:hover {
+  background: #ffffff20;
+}
+.viewer-button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.viewer-button[aria-pressed='true'] {
+  color: #f895a5;
+}
+.viewer-count {
+  flex: 1;
+  font-size: 13px;
+  color: #d1d7d3;
+}
+.viewer-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: pan-y;
+}
+.viewer-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  user-select: none;
+}
+.viewer-stage.zoomed {
+  display: block;
+  touch-action: pan-x pan-y;
+}
+.viewer-stage.zoomed .viewer-image {
+  max-width: none;
+  max-height: none;
+  object-fit: fill;
+}
+.viewer-bottom {
+  padding-top: 6px;
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+}
+.viewer-quality {
+  flex: 1;
+  text-align: center;
+  color: #c5d1c9;
+  font-size: 12px;
+}
+.viewer-error {
+  padding: 8px 16px max(10px, env(safe-area-inset-bottom));
+  font-size: 12px;
+  color: #ffd4ac;
+}
+.viewer-error button {
+  color: inherit;
+  text-decoration: underline;
+  background: transparent;
+  border: 0;
+  padding: 8px;
+}
+.viewer-details {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 60%;
+  overflow: auto;
+  padding: 18px 20px max(20px, env(safe-area-inset-bottom));
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -10px 40px #0008;
+}
+.viewer-details-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.viewer-details-title h2 {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.viewer-details .chips {
+  margin-bottom: 14px;
+}
+.viewer-button:focus-visible {
+  outline: 2px solid #9ee5b5;
+  outline-offset: -3px;
+}

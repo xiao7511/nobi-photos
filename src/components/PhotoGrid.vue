@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Heart, Images, X, MapPin, ShieldCheck } from '@lucide/vue'
-import { nextTick, onUnmounted, ref, watch } from 'vue'
+import { Heart, Images } from '@lucide/vue'
+import { ref } from 'vue'
 import type { Photo } from '../domain/models'
 import { useLibrary } from '../stores/library'
 import PhotoThumbnail from './PhotoThumbnail.vue'
-import TagEditor from './TagEditor.vue'
+import PhotoViewer from './PhotoViewer.vue'
 withDefaults(
   defineProps<{
     photos: Photo[]
@@ -16,31 +16,16 @@ withDefaults(
 )
 const emit = defineEmits<{ toggle: [id: string] }>()
 const library = useLibrary()
-const selected = ref<Photo | null>(null)
-const dialog = ref<HTMLDialogElement>()
+const selected = ref('')
 let opener: HTMLElement | null = null
-async function open(photo: Photo, event: MouseEvent) {
+function open(photo: Photo, event: MouseEvent) {
   opener = event.currentTarget as HTMLElement
-  selected.value = photo
-  await nextTick()
-  dialog.value?.showModal()
+  selected.value = photo.id
 }
 function close() {
-  dialog.value?.close()
-  selected.value = null
+  selected.value = ''
   opener?.focus()
 }
-watch(
-  () => library.photos,
-  (photos) => {
-    if (selected.value) {
-      const current = photos.find((p) => p.id === selected.value?.id)
-      if (!current) close()
-      else selected.value = current
-    }
-  },
-)
-onUnmounted(() => dialog.value?.close())
 </script>
 <template>
   <div v-if="photos.length" :class="['photo-grid', { compact }]">
@@ -87,48 +72,5 @@ onUnmounted(() => dialog.value?.close())
       library.isNative ? '管理本机相册与权限 →' : '管理或恢复示例相册 →'
     }}</RouterLink>
   </div>
-  <dialog
-    ref="dialog"
-    class="photo-dialog"
-    aria-label="照片详情"
-    @cancel.prevent="close"
-    @click="
-      (e) => {
-        if (e.target === dialog) close()
-      }
-    "
-  >
-    <template v-if="selected">
-      <button class="dialog-close icon-button" aria-label="关闭照片详情" @click="close">
-        <X /></button
-      ><PhotoThumbnail :photo="selected" detail />
-      <div class="dialog-info">
-        <span class="eyebrow">A LITTLE MOMENT</span>
-        <h2>{{ selected.title }}</h2>
-        <p><MapPin :size="14" /> {{ selected.location }} · {{ selected.takenAt.slice(0, 10) }}</p>
-        <div class="chips">
-          <span v-for="tag in selected.tags" :key="tag" class="chip">{{ tag }}</span>
-        </div>
-        <button
-          class="button"
-          :disabled="library.busy"
-          @click="library.favorite(library.photos.find((p) => p.id === selected?.id)!)"
-        >
-          <Heart :size="17" />
-          {{
-            library.photos.find((p) => p.id === selected?.id)?.favorite ? '取消收藏' : '收藏这一刻'
-          }}
-        </button>
-        <TagEditor :photo-id="selected.id" />
-        <p class="fine-print">
-          <ShieldCheck :size="14" />
-          {{
-            selected.source === 'device'
-              ? '本机缩略预览 · 原图未修改'
-              : '本地示例插画 · 未读取系统照片'
-          }}
-        </p>
-      </div>
-    </template>
-  </dialog>
+  <PhotoViewer v-if="selected" :photos="photos" :initial-id="selected" @close="close" />
 </template>

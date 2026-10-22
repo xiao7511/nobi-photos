@@ -1,8 +1,8 @@
 {
   "name": "nobi-photos",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
-  "description": "NOBI Photos: private offline AI album organization for Android and iOS, Phase 5",
+  "description": "NOBI Photos: private local original photo viewer and AI album organization, Phase 6",
   "scripts": {
     "dev": "vite",
     "lint": "eslint . --max-warnings 0",

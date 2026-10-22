@@ -175,6 +175,9 @@ export const useLibrary = defineStore('library', () => {
   function deleteAlbum(id: string) {
     return organize((repo) => repo.deleteAlbum(id), '相册已移除，照片原图未修改')
   }
+  function renameAlbum(id: string, name: string) {
+    return organize((repo) => repo.renameAlbum(id, name), '相册名称已更新')
+  }
   function saveTags(id: string, tags: string[]) {
     return organize((repo) => repo.saveTags(id, tags), '手动标签已保存在本地')
   }
@@ -222,6 +225,7 @@ export const useLibrary = defineStore('library', () => {
     isNative,
     saveAlbum,
     deleteAlbum,
+    renameAlbum,
     saveTags,
     editBatch,
     saveSmartAlbums,

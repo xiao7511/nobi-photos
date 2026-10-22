@@ -27,6 +27,8 @@ export interface PhotoLibraryBridge {
   endSnapshot(options: { sessionId: string }): Promise<void>
   filterAccessible(options: { assetIds: string[] }): Promise<{ assetIds: string[] }>
   thumbnail(options: { assetId: string }): Promise<{ dataUrl: string }>
+  original(options: { assetId: string; leaseId: string }): Promise<{ fileUri: string }>
+  releaseOriginal(options: { leaseId: string }): Promise<void>
 }
 export interface ScanRepository {
   beginScan(id: string): Promise<void>

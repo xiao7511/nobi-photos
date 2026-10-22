@@ -6,6 +6,7 @@ import PhotoGrid from '../components/PhotoGrid.vue'
 import PhotoThumbnail from '../components/PhotoThumbnail.vue'
 import type { Category } from '../domain/models'
 import AlbumEditor from '../components/AlbumEditor.vue'
+import AlbumRename from '../components/AlbumRename.vue'
 import SmartOrganization from '../components/SmartOrganization.vue'
 const library = useLibrary()
 const selected = ref<Category | '收藏' | null>(null)
@@ -14,6 +15,7 @@ const selectedUser = ref(''),
   confirmation = ref<HTMLDialogElement>(),
   actionError = ref('')
 const userAlbum = computed(() => library.albums.find((a) => a.id === selectedUser.value))
+const rename = ref<InstanceType<typeof AlbumRename>>()
 const userPhotos = computed(() =>
   library.photos.filter((p) => userAlbum.value?.photoIds.includes(p.id)),
 )
@@ -143,6 +145,9 @@ const visible = computed(() =>
         <span>{{ userPhotos.length }} 张照片</span>
       </div>
       <div class="data-actions">
+        <button class="button" @click="rename?.open(userAlbum)">
+          <Pencil :size="15" /> 修改名称
+        </button>
         <button class="button" @click="editor?.open(userAlbum)">
           <Pencil :size="15" /> 编辑相册</button
         ><button class="button danger" @click="confirmation?.showModal()">
@@ -155,6 +160,7 @@ const visible = computed(() =>
     <PhotoGrid :photos="userPhotos" />
   </section>
   <AlbumEditor ref="editor" @saved="chooseUser" />
+  <AlbumRename ref="rename" />
   <dialog ref="confirmation" class="confirm-dialog" aria-labelledby="remove-album-title">
     <h2 id="remove-album-title">移除这个相册？</h2>
     <p>仅移除本地整理关系，系统照片、其他相册与手动标签均不受影响。</p>

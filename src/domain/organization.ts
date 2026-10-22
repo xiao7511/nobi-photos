@@ -8,6 +8,7 @@ export interface UserAlbum {
 export interface OrganizationRepository {
   listAlbums(): Promise<UserAlbum[]>
   saveAlbum(album: UserAlbum): Promise<void>
+  renameAlbum(id: string, name: string): Promise<void>
   deleteAlbum(id: string): Promise<void>
   saveTags(photoId: string, tags: string[]): Promise<void>
   editBatch(photoIds: string[], edit: BatchEdit): Promise<void>

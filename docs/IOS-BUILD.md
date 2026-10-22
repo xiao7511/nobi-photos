@@ -1,11 +1,12 @@
 # iOS 开发、构建与验证
 
-版本 0.5.0 / build 6，bundle ID `app.nobi.photos`。iOS 原生工程使用 Capacitor 8、Swift Package Manager、本地 PhotoKit / SQLite 与 Apple Vision，无需注册或云端业务 API。
+版本 0.6.0 / build 7，bundle ID `app.nobi.photos`。iOS 原生工程使用 Capacitor 8、Swift Package Manager、本地 PhotoKit / SQLite 与 Apple Vision，无需注册或云端业务 API。
 
 ## 当前交付
 
 - 完整原生容器与内置 Web 资源；不依赖电脑上的 Vite 服务。
 - 只读 PhotoKit 桥接：授权、分页索引、本地缩略图、可访问范围复核，`isNetworkAccessAllowed=false`。
+- 本地原图资源流式读取：64 百万像素/80 MiB 上限，临时缓存排除备份，关闭、切换或后台清理；全屏适应、缩放、连续浏览。不下载 iCloud 资源。
 - SQLite 使用 `Library/NoCloud`，本地收藏、标签、相册与成员关系复用 schema v2。
 - 主动使用 `VNClassifyImageRequest` 做离线分类，建议经选择与确认后保存；不做人脸身份识别。
 - 与网页一致的 1024×1024、无 Alpha AppIcon，安全区布局及隐私清单。

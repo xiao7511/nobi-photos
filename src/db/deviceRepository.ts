@@ -2,7 +2,7 @@ import type { Photo } from '../domain/models'
 import type { DevicePhoto, ScanRepository } from '../native/contracts'
 import schema1 from './schema.sql?raw'
 import schema2 from './migration2.sql?raw'
-import { normalizeTags, validateAlbum } from '../domain/organization'
+import { normalizeName, normalizeTags, validateAlbum } from '../domain/organization'
 import type { UserAlbum } from '../domain/organization'
 import { planBatch } from '../domain/batchEdit'
 import type { BatchEdit } from '../domain/batchEdit'
@@ -221,6 +221,14 @@ export class DevicePhotoRepository implements ScanRepository {
   }
   async deleteAlbum(id: string) {
     await this.driver.batch([command("DELETE FROM albums WHERE id=? AND kind='manual'", [id])])
+  }
+  async renameAlbum(id: string, name: string) {
+    const valid = normalizeName(name)
+    if (!(await this.listAlbums()).some((a) => a.id === id))
+      throw new Error('相册已不存在，请重新加载')
+    await this.driver.batch([
+      command("UPDATE albums SET name=? WHERE id=? AND kind='manual'", [valid, id]),
+    ])
   }
   async saveTags(id: string, tags: string[]) {
     const normalized = normalizeTags(tags)

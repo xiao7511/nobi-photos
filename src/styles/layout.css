@@ -428,17 +428,6 @@ main {
     max-width: calc(100vw - 30px);
     font-size: 11px;
   }
-  .photo-dialog[open] {
-    grid-template-columns: 1fr;
-  }
-  .photo-dialog > img {
-    max-height: 45dvh;
-    object-fit: cover;
-  }
-  .dialog-info {
-    padding: 25px;
-    gap: 16px;
-  }
   .confirm-dialog {
     padding: 28px;
   }

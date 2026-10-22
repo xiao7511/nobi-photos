@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile, readFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
 import console from 'node:console'
@@ -104,7 +105,10 @@ try {
     .getByRole('dialog', { name: '保存智能建议相册？' })
     .getByRole('button', { name: '确认保存相册' })
     .click()
-  await page.locator('.user-album').filter({ hasText: '智能 · 宠物与动物' }).waitFor()
+  await page
+    .locator('.user-album')
+    .filter({ hasText: /智能 · 宠物与动物|我的动物朋友/ })
+    .waitFor()
   const query = () =>
     page.evaluate(() =>
       globalThis.Capacitor.Plugins.CapacitorSQLite.query({
@@ -115,6 +119,100 @@ try {
       }),
     )
   assert.ok((await query()).values[0].count >= 1)
+  const originalMembers = (await query()).values[0].count
+  await page
+    .locator('.user-album')
+    .filter({ hasText: /智能 · 宠物与动物|我的动物朋友/ })
+    .click()
+  await page.getByRole('button', { name: '修改名称', exact: true }).click()
+  const rename = page.getByRole('dialog', { name: '修改相册名称' })
+  await rename.getByRole('textbox', { name: '相册名称' }).fill('我的动物朋友')
+  await rename.getByRole('button', { name: '保存名称', exact: true }).click()
+  assert.equal((await query()).values[0].count, originalMembers)
+  await page.getByRole('button', { name: '查看nobi_ai_reference_parrot.jpg', exact: true }).click()
+  const viewer = page.getByRole('dialog', { name: '照片详情' })
+  await viewer
+    .locator('.viewer-quality')
+    .filter({ hasText: /^原图$/ })
+    .waitFor()
+  const original = await viewer.locator('img').evaluate((image) => ({
+    width: image.naturalWidth,
+    height: image.naturalHeight,
+    source: image.getAttribute('src'),
+  }))
+  assert.ok(
+    original.width > 256 && original.height > 256,
+    'Must decode the actual original, not upscale the thumbnail',
+  )
+  const cacheFile = decodeURIComponent(original.source).split('/nobi-viewer/')[1]
+  assert.match(cacheFile, /^[a-f0-9-]+\.jpg$/i)
+  const digest = await adb(
+    'shell',
+    'run-as',
+    'app.nobi.photos',
+    'sha256sum',
+    `cache/nobi-viewer/${cacheFile}`,
+  )
+  const fixture = await readFile('tests/fixtures/ai/parrot.jpg')
+  // Scoped MediaStore may redact EXIF without ACCESS_MEDIA_LOCATION. Compare every decoded
+  // pixel instead of requiring location metadata or treating system redaction as compression.
+  const pixelHashes = await viewer.locator('img').evaluate(
+    async (image, reference) => {
+      const fixtureImage = new globalThis.Image()
+      fixtureImage.src = reference
+      await fixtureImage.decode()
+      async function hash(image) {
+        const canvas = document.createElement('canvas')
+        canvas.width = image.naturalWidth
+        canvas.height = image.naturalHeight
+        const context = canvas.getContext('2d', { willReadFrequently: true })
+        context.drawImage(image, 0, 0)
+        const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+        return Array.from(new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', pixels)))
+          .map((v) => v.toString(16).padStart(2, '0'))
+          .join('')
+      }
+      return {
+        actual: await hash(image),
+        reference: await hash(fixtureImage),
+        referenceWidth: fixtureImage.naturalWidth,
+        referenceHeight: fixtureImage.naturalHeight,
+      }
+    },
+    `data:image/jpeg;base64,${fixture.toString('base64')}`,
+  )
+  assert.equal(original.width, pixelHashes.referenceWidth)
+  assert.equal(original.height, pixelHashes.referenceHeight)
+  assert.equal(pixelHashes.actual, pixelHashes.reference)
+  const viewerSize = await viewer.boundingBox(),
+    imageArea = await viewer.locator('.viewer-stage').boundingBox()
+  assert.ok(imageArea.height / viewerSize.height > 0.76)
+  await viewer.getByRole('button', { name: '放大照片' }).click()
+  await viewer.getByRole('button', { name: '适应屏幕' }).click()
+  await page.screenshot({ path: join(output, 'local-original-viewer.png') })
+  await viewer.getByRole('button', { name: '关闭照片详情' }).click()
+  await page.waitForFunction(() => !document.querySelector('.photo-viewer'))
+  for (
+    let i = 0;
+    i < 20 && (await adb('shell', 'run-as', 'app.nobi.photos', 'ls', 'cache/nobi-viewer'));
+    i++
+  )
+    await setTimeout(200)
+  assert.equal(await adb('shell', 'run-as', 'app.nobi.photos', 'ls', 'cache/nobi-viewer'), '')
+  // A background transition must discard the original lease as well as the image UI.
+  await page.getByRole('button', { name: '查看nobi_ai_reference_parrot.jpg', exact: true }).click()
+  await viewer
+    .locator('.viewer-quality')
+    .filter({ hasText: /^原图$/ })
+    .waitFor()
+  await adb('shell', 'input', 'keyevent', '3')
+  await setTimeout(1000)
+  assert.equal(await adb('shell', 'run-as', 'app.nobi.photos', 'ls', 'cache/nobi-viewer'), '')
+  await adb('shell', 'am', 'start', '-n', 'app.nobi.photos/.MainActivity')
+  await page.waitForFunction(() => !document.querySelector('.photo-viewer'))
+  console.log(
+    `Original viewer passed: ${original.width}x${original.height}, identical full-resolution pixels, zoom, close/background cleanup, renamed AI album`,
+  )
   await page.screenshot({ path: join(output, 'reviewed-albums.png') })
   await browser.close()
   browser = undefined
@@ -123,7 +221,7 @@ try {
   page = await connect()
   await page.waitForFunction(() => document.querySelectorAll('.photo-card').length === 102)
   await page.locator('.mobile-nav a[href="#/albums"]').click()
-  await page.locator('.user-album').filter({ hasText: '智能 · 宠物与动物' }).waitFor()
+  await page.locator('.user-album').filter({ hasText: '我的动物朋友' }).waitFor()
   assert.ok((await query()).values[0].count >= 1)
   await writeFile(
     join(output, 'result.json'),
@@ -139,6 +237,15 @@ try {
         reviewedAlbumSaved: true,
         nativeSqlite: true,
         coldStartPersistence: true,
+        renamedAlbum: '我的动物朋友',
+        membershipPreserved: originalMembers,
+        originalDimensions: { width: original.width, height: original.height },
+        fixtureSha256: createHash('sha256').update(fixture).digest('hex'),
+        readableOriginalSha256: digest.split(/\s+/)[0],
+        decodedPixelsSha256: pixelHashes.actual,
+        originalPixelsMatchFixture: true,
+        originalCloseAndBackgroundCleanup: true,
+        originalViewportRatio: imageArea.height / viewerSize.height,
         privatePhotos: false,
         status: 'passed',
       },

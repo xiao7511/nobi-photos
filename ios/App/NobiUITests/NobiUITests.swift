@@ -63,6 +63,23 @@ final class NobiUITests: XCTestCase {
         let indexedCount = Int(indexedLabel.split(separator: " ").first.map(String.init) ?? "0") ?? 0
         XCTAssertGreaterThanOrEqual(indexedCount, 101)
         print("NOBI_INDEXED_PHOTOS \(indexedCount); generated fixtures: 101; remaining assets: hosted simulator stock images")
+        let openPhoto = app.webViews.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "查看照片 ·")).firstMatch
+        XCTAssertTrue(openPhoto.waitForExistence(timeout: 20))
+        openPhoto.tap()
+        XCTAssertTrue(app.webViews.staticTexts["原图"].firstMatch.waitForExistence(timeout: 30))
+        let zoom = app.webViews.buttons["放大照片"].firstMatch
+        XCTAssertTrue(zoom.isEnabled)
+        zoom.tap()
+        let fit = app.webViews.buttons["适应屏幕"].firstMatch
+        XCTAssertTrue(fit.waitForExistence(timeout: 10))
+        fit.tap()
+        app.webViews.buttons["下一张照片"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["原图"].firstMatch.waitForExistence(timeout: 30))
+        let originalShot = XCTAttachment(screenshot: app.screenshot())
+        originalShot.name = "ios-local-original-viewer"
+        originalShot.lifetime = .keepAlways
+        add(originalShot)
+        app.webViews.buttons["关闭照片详情"].firstMatch.tap()
         app.webViews.links["分类"].firstMatch.tap()
         let start = app.webViews.buttons["开始智能整理"].firstMatch
         XCTAssertTrue(start.waitForExistence(timeout: 20))

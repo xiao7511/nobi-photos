@@ -25,6 +25,9 @@ import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -48,6 +51,21 @@ public class NobiPhotoLibraryPlugin extends Plugin {
     private List<String> snapshot;
     private String session;
     private LocalImageClassifier classifier;
+    private final Map<String, File> originals = new HashMap<>();
+    private volatile boolean foreground = true;
+    private volatile long viewerGeneration;
+    private File viewerDirectory() { return new File(getContext().getCacheDir(), "nobi-viewer"); }
+    private void clearOriginals() {
+        originals.clear();
+        File[] files = viewerDirectory().listFiles();
+        if (files != null) for (File file : files) if (file.isFile()) file.delete();
+    }
+    @Override public void load() { worker.execute(this::clearOriginals); }
+    @Override protected void handleOnResume() { foreground = true; }
+    @Override protected void handleOnPause() {
+        foreground = false; viewerGeneration++;
+        worker.execute(this::clearOriginals);
+    }
     private static final Uri COLLECTION = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
     private String iso(long millis) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
@@ -180,9 +198,65 @@ public class NobiPhotoLibraryPlugin extends Plugin {
           catch (Exception error) { call.reject("Local AI unavailable for this image", "LOCAL_AI_FAILED"); }
         finally { if (bitmap != null) bitmap.recycle(); }
     }); }
+    @PluginMethod public void original(PluginCall call) {
+        final long generation = viewerGeneration;
+        run(call, () -> {
+            requireAccess();
+            String id = call.getString("assetId", ""), lease = call.getString("leaseId", "");
+            if (!id.matches("[0-9]+") || !lease.matches("[a-fA-F0-9-]{36}") || !foreground || generation != viewerGeneration) {
+                call.reject("Viewer closed", "VIEWER_CLOSED"); return;
+            }
+            Uri uri = ContentUris.withAppendedId(COLLECTION, Long.parseLong(id));
+            Map<String, JSObject> rows = read(java.util.Collections.singletonList(id));
+            JSObject row = rows.get(id);
+            if (row == null) throw new SecurityException();
+            if ((long) row.optInt("width") * row.optInt("height") > 64000000L || row.optLong("bytes") > 80L * 1024 * 1024) {
+                call.reject("Original exceeds safe viewer limits", "ORIGINAL_TOO_LARGE"); return;
+            }
+            String mime = getContext().getContentResolver().getType(uri);
+            String extension = "image/jpeg".equals(mime) ? "jpg" : "image/png".equals(mime) ? "png"
+                : "image/webp".equals(mime) ? "webp" : "image/gif".equals(mime) ? "gif"
+                : "image/heic".equals(mime) ? "heic" : "image/heif".equals(mime) ? "heif"
+                : "image/avif".equals(mime) ? "avif" : null;
+            if (extension == null) { call.reject("Unsupported original format", "ORIGINAL_FORMAT"); return; }
+            clearOriginals(); // One original at a time, independent of the thumbnail cache.
+            File directory = viewerDirectory();
+            if (!directory.isDirectory() && !directory.mkdirs()) { call.reject("Cache unavailable"); return; }
+            File file = new File(directory, lease + "." + extension);
+            boolean retained = false;
+            try {
+                try (InputStream input = getContext().getContentResolver().openInputStream(uri);
+                     FileOutputStream output = new FileOutputStream(file)) {
+                    if (input == null) throw new IOException();
+                    byte[] buffer = new byte[65536]; int count; long total = 0;
+                    while ((count = input.read(buffer)) != -1) {
+                        total += count;
+                        if (!foreground || generation != viewerGeneration || total > 80L * 1024 * 1024) throw new IOException();
+                        output.write(buffer, 0, count);
+                    }
+                    if (total == 0) throw new IOException();
+                }
+                requireAccess();
+                try (Cursor check = getContext().getContentResolver().query(uri, new String[]{"_id"}, null, null, null)) {
+                    if (check == null || !check.moveToFirst()) throw new SecurityException();
+                }
+                if (!foreground || generation != viewerGeneration) throw new IOException();
+                originals.put(lease, file); retained = true;
+                call.resolve(new JSObject().put("fileUri", Uri.fromFile(file).toString()));
+            } catch (SecurityException error) { throw error; }
+              catch (Exception error) { call.reject("Local original unavailable", "ORIGINAL_UNAVAILABLE"); }
+            finally { if (!retained) file.delete(); }
+        });
+    }
+    @PluginMethod public void releaseOriginal(PluginCall call) { run(call, () -> {
+        File file = originals.remove(call.getString("leaseId", ""));
+        if (file != null) file.delete();
+        call.resolve();
+    }); }
     @Override protected void handleOnDestroy() {
         // Serialize release with any inference in progress.
-        worker.execute(() -> { if (classifier != null) { classifier.close(); classifier = null; } });
+        foreground = false; viewerGeneration++;
+        worker.execute(() -> { clearOriginals(); if (classifier != null) { classifier.close(); classifier = null; } });
         worker.shutdown(); snapshot = null; session = null;
     }
 }

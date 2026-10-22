@@ -1,7 +1,7 @@
 import { createDemoPhotos } from '../data/demo'
 import { METADATA_KEY } from './storageKeys'
 import type { StoragePort } from './localRepository'
-import { normalizeTags, validateAlbum } from '../domain/organization'
+import { normalizeName, normalizeTags, validateAlbum } from '../domain/organization'
 import type { OrganizationRepository, UserAlbum } from '../domain/organization'
 import { planBatch } from '../domain/batchEdit'
 import type { BatchEdit } from '../domain/batchEdit'
@@ -97,6 +97,13 @@ export class DemoOrganizationRepository implements OrganizationRepository {
   async deleteAlbum(id: string) {
     const state = this.read()
     state.organization.albums = state.organization.albums.filter((a) => a.id !== id)
+    this.storage.setItem(METADATA_KEY, JSON.stringify(state))
+  }
+  async renameAlbum(id: string, name: string) {
+    const state = this.read()
+    const album = state.organization.albums.find((a) => a.id === id)
+    if (!album) throw new Error('相册已不存在，请重新加载')
+    album.name = normalizeName(name)
     this.storage.setItem(METADATA_KEY, JSON.stringify(state))
   }
   async saveTags(id: string, tags: string[]) {

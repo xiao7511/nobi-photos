@@ -49,7 +49,7 @@ describe('device SQLite index and migration v2', () => {
     await repo.saveSmartAlbums([
       { key: 'nature', name: 'ignored', photoIds: ['device:a'], confidence: 0.9 },
     ])
-    await repo.saveAlbum({ id: 'user:smart:nature', name: '改过的名字', photoIds: ['device:a'] })
+    await repo.renameAlbum('user:smart:nature', '改过的名字')
     await repo.saveSmartAlbums([
       { key: 'nature', name: 'ignored', photoIds: ['device:b'], confidence: 0.9 },
     ])

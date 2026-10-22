@@ -17,11 +17,51 @@ public class NobiPhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "endSnapshot", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "filterAccessible", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "thumbnail", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "original", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "releaseOriginal", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "classify", returnType: CAPPluginReturnPromise)
     ]
     private let worker = DispatchQueue(label: "app.nobi.photos.library")
     private var snapshot: [String]?
     private var session: String?
+    private final class OriginalRead {
+        let url: URL
+        let handle: FileHandle
+        var request: PHAssetResourceDataRequestID?
+        var bytes = 0
+        var failed = false
+        init(url: URL, handle: FileHandle) { self.url = url; self.handle = handle }
+    }
+    private var originals: [String: OriginalRead] = [:]
+    private var observers: [NSObjectProtocol] = []
+    private var viewerActive = true
+    private var viewerDirectory: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("nobi-viewer", isDirectory: true)
+    }
+    public override func load() {
+        worker.async { self.clearOriginals() }
+        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            self.worker.async { self.viewerActive = false; self.clearOriginals() }
+        })
+        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            self.worker.async { self.viewerActive = true }
+        })
+    }
+    deinit { for observer in observers { NotificationCenter.default.removeObserver(observer) } }
+    private func release(_ lease: String) {
+        guard let read = originals.removeValue(forKey: lease) else { return }
+        if let request = read.request { PHAssetResourceManager.default().cancelDataRequest(request) }
+        try? read.handle.close()
+        try? FileManager.default.removeItem(at: read.url)
+    }
+    private func clearOriginals() {
+        for lease in Array(originals.keys) { release(lease) }
+        if let files = try? FileManager.default.contentsOfDirectory(at: viewerDirectory, includingPropertiesForKeys: nil) {
+            for file in files { try? FileManager.default.removeItem(at: file) }
+        }
+    }
     private func access() -> String {
         switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
         case .authorized: return "granted"
@@ -160,5 +200,67 @@ public class NobiPhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 call.resolve(["engine": "apple-vision", "labels": labels])
             } catch { call.reject("Local classification failed", "LOCAL_AI_FAILED") }
         }
+    }
+    @objc func original(_ call: CAPPluginCall) {
+        worker.async {
+            guard self.viewerActive, self.permitted(), let id = call.getString("assetId"),
+                  let lease = call.getString("leaseId"), UUID(uuidString: lease) != nil,
+                  let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else {
+                call.reject("Local original unavailable", "ORIGINAL_UNAVAILABLE"); return
+            }
+            guard Int64(asset.pixelWidth) * Int64(asset.pixelHeight) <= 64_000_000,
+                  let resource = PHAssetResource.assetResources(for: asset).first(where: { $0.type == .photo }) else {
+                call.reject("Original exceeds viewer limits or unsupported format", "ORIGINAL_FORMAT"); return
+            }
+            let ext = (resource.originalFilename as NSString).pathExtension.lowercased()
+            guard ["jpg", "jpeg", "png", "heic", "heif", "webp", "gif", "avif"].contains(ext) else {
+                call.reject("Unsupported original format", "ORIGINAL_FORMAT"); return
+            }
+            self.clearOriginals()
+            do {
+                try FileManager.default.createDirectory(at: self.viewerDirectory, withIntermediateDirectories: true)
+                var url = self.viewerDirectory.appendingPathComponent(lease + "." + ext)
+                guard FileManager.default.createFile(atPath: url.path, contents: nil, attributes: [.protectionKey: FileProtectionType.complete]) else {
+                    call.reject("Cache unavailable"); return
+                }
+                var values = URLResourceValues(); values.isExcludedFromBackup = true; try url.setResourceValues(values)
+                let fileURL = url
+                let read = OriginalRead(url: url, handle: try FileHandle(forWritingTo: url))
+                self.originals[lease] = read
+                let options = PHAssetResourceRequestOptions()
+                options.isNetworkAccessAllowed = false
+                read.request = PHAssetResourceManager.default().requestData(for: resource, options: options, dataReceivedHandler: { data in
+                    self.worker.async {
+                        guard self.originals[lease] === read, !read.failed else { return }
+                        read.bytes += data.count
+                        do {
+                            guard read.bytes <= 80 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
+                            try read.handle.write(contentsOf: data)
+                        } catch {
+                            read.failed = true
+                            if let request = read.request { PHAssetResourceManager.default().cancelDataRequest(request) }
+                        }
+                    }
+                }, completionHandler: { error in
+                    self.worker.async {
+                        guard self.originals[lease] === read else { call.reject("Viewer closed", "VIEWER_CLOSED"); return }
+                        try? read.handle.close()
+                        guard error == nil, !read.failed, read.bytes > 0, self.viewerActive, self.permitted(),
+                              PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject != nil else {
+                            self.release(lease)
+                            call.reject("Local original unavailable; cloud downloads disabled", "ORIGINAL_UNAVAILABLE"); return
+                        }
+                        read.request = nil
+                        call.resolve(["fileUri": fileURL.absoluteString])
+                    }
+                })
+            } catch {
+                self.clearOriginals()
+                call.reject("Local original unavailable", "ORIGINAL_UNAVAILABLE")
+            }
+        }
+    }
+    @objc func releaseOriginal(_ call: CAPPluginCall) {
+        worker.async { self.release(call.getString("leaseId") ?? ""); call.resolve() }
     }
 }

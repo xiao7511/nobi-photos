@@ -13,6 +13,8 @@ const photo: DevicePhoto = {
 }
 function setup() {
   const bridge: PhotoLibraryBridge = {
+    original: vi.fn(),
+    releaseOriginal: vi.fn(),
     getAccess: vi.fn(async () => ({ status: 'granted' as const })),
     requestAccess: vi.fn(),
     openSettings: vi.fn(),
