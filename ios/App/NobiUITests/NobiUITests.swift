@@ -38,7 +38,14 @@ final class NobiUITests: XCTestCase {
             let fullAccess = system.buttons.matching(NSPredicate(format: "label MATCHES[c] %@", ".*(Allow Full Access|允许完全访问|允许访问所有照片|允许所有照片|允许全部照片).*" )).firstMatch
             if fullAccess.waitForExistence(timeout: 15) { fullAccess.tap() }
         }
-        XCTAssertTrue(text("101 张本机照片").waitForExistence(timeout: 120))
+        // The hosted simulator can include Apple's six stock images in addition to our 101 fixtures.
+        // Require enough real assets to cross the 100-item page boundary, then retain the exact total.
+        let count = app.webViews.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]{2,} 张本机照片")).firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 120))
+        let indexedLabel = count.label
+        let indexedCount = Int(indexedLabel.split(separator: " ").first.map(String.init) ?? "0") ?? 0
+        XCTAssertGreaterThanOrEqual(indexedCount, 101)
+        print("NOBI_INDEXED_PHOTOS \(indexedCount); generated fixtures: 101; remaining assets: hosted simulator stock images")
         app.webViews.links["分类"].firstMatch.tap()
         let start = app.webViews.buttons["开始智能整理"].firstMatch
         XCTAssertTrue(start.waitForExistence(timeout: 20))
@@ -50,7 +57,7 @@ final class NobiUITests: XCTestCase {
         add(shot)
         app.terminate()
         app.launch()
-        XCTAssertTrue(text("101 张本机照片").waitForExistence(timeout: 45))
+        XCTAssertTrue(text(indexedLabel).waitForExistence(timeout: 45))
     }
     func testTabsThemePrivacyAndKeyboard() throws {
         for tab in ["照片", "分类", "AI 搜索", "清理", "我的"] {
