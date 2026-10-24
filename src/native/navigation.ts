@@ -16,7 +16,7 @@ export async function handleNativeBack(router: Router, minimize: () => Promise<v
   }
   const path = router.currentRoute.value.path
   if (path === '/albums' && router.currentRoute.value.query?.album) await router.replace('/albums')
-  else if (path === '/privacy') await router.replace('/profile')
+  else if (['/privacy', '/account', '/studio'].includes(path)) await router.replace('/profile')
   else if (path !== '/') await router.replace('/')
   else await minimize()
 }

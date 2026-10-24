@@ -24,6 +24,10 @@ import { useDeviceLibrary } from './stores/deviceLibrary'
 import { hasAccess } from './native/contracts'
 import { Capacitor, SystemBars, SystemBarsStyle, type PluginListenerHandle } from '@capacitor/core'
 import { handleNativeBack } from './native/navigation'
+import { useAccount } from './stores/account'
+import { cleanShareCache } from './services/mediaShare'
+const account = useAccount()
+const accountTimer = setInterval(() => account.tick(), 15000)
 const route = useRoute()
 const router = useRouter()
 const library = useLibrary()
@@ -87,6 +91,7 @@ watch(
   { immediate: true },
 )
 onMounted(() => {
+  void cleanShareCache()
   preferences.initialize()
   onTheme()
   if (library.isNative) {
@@ -95,6 +100,8 @@ onMounted(() => {
         lifecycle = await App.addListener('appStateChange', ({ isActive }) => {
           appActive = isActive
           if (isActive) {
+            account.tick()
+            void cleanShareCache()
             library.activate()
             void refreshNative()
           } else library.suspend()
@@ -120,6 +127,7 @@ onMounted(() => {
   window.addEventListener('offline', onNetwork)
 })
 onUnmounted(() => {
+  clearInterval(accountTimer)
   disposed = true
   void lifecycle?.remove()
   void backButton?.remove()
@@ -146,7 +154,9 @@ onUnmounted(() => {
           'nav-item',
           {
             active:
-              route.path === item.path || (item.path === '/profile' && route.path === '/privacy'),
+              route.path === item.path ||
+              (item.path === '/profile' &&
+                ['/privacy', '/account', '/studio'].includes(route.path)),
           },
         ]"
       >
@@ -162,7 +172,7 @@ onUnmounted(() => {
         <RouterLink to="/privacy">了解隐私保护 <ArrowUpRight :size="14" /></RouterLink>
       </div>
       <div class="sidebar-footer">
-        <span><i class="status-dot"></i> 本地模式</span><span>PHASE 09</span>
+        <span><i class="status-dot"></i> 本地模式</span><span>PHASE 10</span>
       </div>
     </div>
   </aside>
@@ -231,7 +241,9 @@ onUnmounted(() => {
       :key="item.path"
       :to="item.path"
       :class="{
-        active: route.path === item.path || (item.path === '/profile' && route.path === '/privacy'),
+        active:
+          route.path === item.path ||
+          (item.path === '/profile' && ['/privacy', '/account', '/studio'].includes(route.path)),
       }"
     >
       <component :is="item.icon" :size="21" /><span>{{ item.name }}</span>

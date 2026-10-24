@@ -3,6 +3,9 @@ import console from 'node:console'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import config from '../capacitor.config.ts'
+import { accountConfig } from '../src/domain/accountConfig.ts'
+import { loadEnv } from 'vite'
+import process from 'node:process'
 
 assert.equal(config.appId, 'app.nobi.photos')
 assert.equal(config.webDir, 'dist')
@@ -23,7 +26,13 @@ assert.match(
   /media-src blob: https:\/\/incompetech\.com\/music\/royalty-free\/mp3-royaltyfree\//,
 )
 assert.match(html, /img-src 'self' data: blob:/)
-assert.match(html, /connect-src 'self' ws:\/\/localhost:\* ws:\/\/127\.0\.0\.1:\*;/)
+const env = loadEnv('production', process.cwd(), 'VITE_')
+const account = accountConfig(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_PUBLISHABLE_KEY)
+assert.ok(
+  html.includes(
+    `connect-src 'self'${account ? ` ${account.url}` : ''} ws://localhost:* ws://127.0.0.1:*;`,
+  ),
+)
 assert.match(html, /name="referrer" content="no-referrer"/)
 const ios = readFileSync(new URL('../ios/App/App/Info.plist', import.meta.url), 'utf8')
 assert.match(ios, /NSPhotoLibraryUsageDescription/)

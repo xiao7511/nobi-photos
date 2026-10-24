@@ -12,6 +12,8 @@ import {
 import { useLibrary } from '../stores/library'
 import { usePreferences } from '../stores/preferences'
 import type { Theme } from '../domain/models'
+import { useAccount } from '../stores/account'
+const account = useAccount()
 const library = useLibrary()
 const preferences = usePreferences()
 const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
@@ -25,18 +27,32 @@ const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
     <div>
       <span class="eyebrow">MAKE YOURSELF AT HOME</span>
       <h1>你的回忆，你的空间<span class="title-dot">.</span></h1>
-      <p>不必注册，生活本就值得被记录。</p>
+      <p>基础相册无需注册，登录后开启更多创作方式。</p>
     </div>
   </section>
   <section class="profile-card">
     <div class="large-avatar">N</div>
     <div>
       <span class="eyebrow">HELLO, MOMENT COLLECTOR</span>
-      <h2>本地生活记录者</h2>
-      <p>离线也自在 · 无需账号</p>
+      <h2>{{ account.signedIn ? '注册用户 · 创作空间' : '本地生活记录者' }}</h2>
+      <p>
+        {{ account.signedIn ? '创作权益已启用 · 照片仍在本机' : '离线也自在 · 基础功能无需账号' }}
+      </p>
     </div>
     <ShieldCheck :size="28" />
   </section>
+  <RouterLink to="/account" class="settings-link"
+    ><span class="setting-icon"><ShieldCheck :size="25" /></span
+    ><span
+      ><strong>{{ account.signedIn ? '账号与创作权益' : '注册 / 登录' }}</strong
+      ><small>免费注册 · 邮箱验证 · 自愿使用</small></span
+    ><ChevronRight :size="20"
+  /></RouterLink>
+  <RouterLink to="/studio" class="settings-link"
+    ><span class="setting-icon"><Images :size="25" /></span
+    ><span><strong>图片创作室</strong><small>本地美化、社交拼图与分享</small></span
+    ><ChevronRight :size="20"
+  /></RouterLink>
   <div class="profile-stats">
     <div>
       <Images :size="21" /><strong>{{ library.photos.length }}</strong
@@ -73,6 +89,6 @@ const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
   <div class="about-note">
     <img src="/favicon.svg" alt="" /><strong>NOBI Photos</strong>
     <p>照片留在本地，回忆自在生长。</p>
-    <span>v0.9.0 · {{ library.isNative ? 'Android / iOS 本地应用' : '浏览器示例预览' }}</span>
+    <span>v0.10.0 · {{ library.isNative ? 'Android / iOS 本地应用' : '浏览器示例预览' }}</span>
   </div>
 </template>

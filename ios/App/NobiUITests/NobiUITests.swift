@@ -116,6 +116,25 @@ final class NobiUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(text(indexedLabel).waitForExistence(timeout: 45))
     }
+    func testOptionalAccountAndGuestCreationBoundary() throws {
+        app.webViews.links["我的"].firstMatch.tap()
+        let account = app.webViews.links.containing(NSPredicate(format: "label CONTAINS %@", "注册 / 登录")).firstMatch
+        XCTAssertTrue(account.waitForExistence(timeout: 20))
+        account.tap()
+        XCTAssertTrue(text("账号服务尚未配置").waitForExistence(timeout: 20))
+        let loginButtons = app.webViews.buttons.matching(NSPredicate(format: "label == %@", "登录")).allElementsBoundByIndex
+        XCTAssertTrue(loginButtons.contains(where: { !$0.isEnabled }))
+        app.webViews.links.containing(NSPredicate(format: "label CONTAINS %@", "返回我的空间")).firstMatch.tap()
+        let studio = app.webViews.links.containing(NSPredicate(format: "label CONTAINS %@", "图片创作室")).firstMatch
+        XCTAssertTrue(studio.waitForExistence(timeout: 20))
+        studio.tap()
+        XCTAssertTrue(text("注册用户专属创作").waitForExistence(timeout: 20))
+        XCTAssertFalse(app.webViews.buttons["生成成品预览"].exists)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "ios-optional-account-guest-studio"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
     func testTabsThemePrivacyAndKeyboard() throws {
         for tab in ["照片", "分类", "AI 搜索", "清理", "我的"] {
             let link = app.webViews.links[tab].firstMatch

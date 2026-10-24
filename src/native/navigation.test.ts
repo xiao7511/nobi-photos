@@ -62,6 +62,8 @@ describe('Android back navigation', () => {
   })
   it.each([
     ['/privacy', '/profile'],
+    ['/account', '/profile'],
+    ['/studio', '/profile'],
     ['/search', '/'],
     ['/albums', '/'],
   ])('returns from %s to %s without traversing tab history', async (from, to) => {

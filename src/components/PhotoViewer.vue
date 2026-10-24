@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   X,
   Heart,
@@ -32,6 +33,12 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ close: [] }>()
 const library = useLibrary()
+const router = useRouter()
+function createPhoto() {
+  const selectedId = photo.value?.id
+  close()
+  if (selectedId) void router.push({ path: '/studio', query: { photo: selectedId } })
+}
 const musicSelection = useMusicSelection()
 const id = ref(props.initialId),
   dialog = ref<HTMLDialogElement>(),
@@ -584,6 +591,7 @@ onUnmounted(() => {
           <span v-for="tag in photo.tags" :key="tag" class="chip">{{ tag }}</span>
         </div>
         <TagEditor :photo-id="photo.id" />
+        <button class="button" @click="createPhoto">美化与分享此照片 →</button>
       </section>
     </template>
   </dialog>

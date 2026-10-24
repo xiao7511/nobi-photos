@@ -2,6 +2,16 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
+    {
+      path: '/account',
+      component: () => import('./views/AccountView.vue'),
+      meta: { title: '账号与权益' },
+    },
+    {
+      path: '/studio',
+      component: () => import('./views/StudioView.vue'),
+      meta: { title: '图片创作室' },
+    },
     { path: '/', component: () => import('./views/PhotosView.vue'), meta: { title: '照片' } },
     { path: '/albums', component: () => import('./views/AlbumsView.vue'), meta: { title: '分类' } },
     {

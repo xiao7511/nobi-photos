@@ -1,8 +1,8 @@
 {
   "name": "nobi-photos",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
-  "description": "NOBI Photos: fan albums and selectable online/local music, Phase 9",
+  "description": "NOBI Photos: optional accounts and local media creation, Phase 10",
   "scripts": {
     "dev": "vite",
     "lint": "eslint . --max-warnings 0",
@@ -19,7 +19,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "art:generate": "node scripts/generate-demo.mjs",
-    "test:native-music": "node scripts/native-music-picker-smoke.mjs"
+    "test:native-music": "node scripts/native-music-picker-smoke.mjs",
+    "test:e2e:account": "node scripts/account-browser-tests.mjs"
   },
   "keywords": [],
   "author": "",
@@ -39,9 +40,12 @@
     "@capacitor/android": "^8.5.3",
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.5",
     "@capacitor/ios": "^8.5.3",
+    "@capacitor/share": "^8.0.3",
     "@lucide/vue": "^1.60.0",
     "@nobi/photo-library": "file:plugins/photo-library",
+    "@supabase/supabase-js": "^2.118.0",
     "pinia": "^4.1.0",
     "vue": "^3.5.44",
     "vue-router": "^5.4.0"

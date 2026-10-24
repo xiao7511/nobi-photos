@@ -32,8 +32,8 @@ async function confirm() {
 const policies = [
   {
     icon: CloudOff,
-    title: '照片不上传',
-    body: '未集成照片上传、云同步、云端 AI 或第三方统计 SDK。',
+    title: '照片不自动上传',
+    body: '没有照片云同步、云端 AI 或统计 SDK；创作成品仅在你确认分享后交给所选的其他应用。',
     state: '已禁用',
   },
   {
@@ -50,9 +50,9 @@ const policies = [
   },
   {
     icon: UserRound,
-    title: '无需注册',
-    body: '没有账号系统，离线也可浏览已缓存的界面与示例。',
-    state: '本地模式',
+    title: '自愿注册，基础相册仍离线可用',
+    body: '邮箱注册仅用于账号和创作权益，不上传照片索引、标签或相册。令牌仅在内存保留。注销云端账号不会清除本机记录。',
+    state: '可选账号',
   },
 ]
 </script>
@@ -94,6 +94,20 @@ const policies = [
   </div>
   <section class="settings-card">
     <h2>本地数据与安全说明</h2>
+    <p class="body-text">
+      自愿注册会向专用账号服务发送邮箱、认证请求与权益请求。登录令牌仅在内存保留，退出或过期需重新登录。基础相册继续供游客离线使用。<RouterLink
+        to="/account"
+        class="text-link"
+        >账号说明与注销 →</RouterLink
+      >
+    </p>
+    <p class="body-text">
+      图片美化和拼图仅在本机生成 JPEG 副本，不携带原图
+      EXIF/GPS；原图不覆盖。分享需预览并确认，成品会交给你选择的其他应用，由其处理和发布。原生分享副本暂存在应用缓存，超过
+      24 小时后于后续前台清理，未启动时不会自动定时清除。<RouterLink to="/studio" class="text-link"
+        >图片创作室 →</RouterLink
+      >
+    </p>
     <p class="body-text">
       配乐默认关闭，可按本机分类推荐或从 Kevin MacLeod 官方曲目列表手动选择录制音乐，经 HTTPS
       在线播放，可能使用移动流量。不发送照片、文件名、相册标题或标签；提供方可看到 IP

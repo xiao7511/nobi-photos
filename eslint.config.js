@@ -5,6 +5,7 @@ export default ts.config(
   {
     ignores: [
       'dist/**',
+      'artifacts/**',
       'node_modules/**',
       'coverage/**',
       'test-results/**',
@@ -14,6 +15,10 @@ export default ts.config(
     ],
   },
   js.configs.recommended,
+  {
+    files: ['deploy/account/functions/**/*.ts'],
+    languageOptions: { globals: { Deno: 'readonly', Request: 'readonly', Response: 'readonly' } },
+  },
   {
     files: ['scripts/generate-icons.mjs'],
     languageOptions: {
