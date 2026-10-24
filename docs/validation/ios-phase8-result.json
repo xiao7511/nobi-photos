@@ -1,0 +1,53 @@
+{
+  "checkedAt": "2026-10-24T02:48:29.853Z",
+  "sourceCommit": "09e56b59b0eb53c648c0f4d630c919c319e23204",
+  "version": "0.8.0",
+  "build": 9,
+  "runId": 40054573104,
+  "url": "https://github.com/xiao7511/nobi-photos/actions/runs/40054573104",
+  "jobs": {
+    "verify": "success",
+    "android": "success",
+    "ios": "success"
+  },
+  "jobIds": {
+    "verify": 120754576516,
+    "android": 120754576772,
+    "ios": 120754576712
+  },
+  "ios": {
+    "nativeBuild": "passed",
+    "uiTests": 2,
+    "failures": 0,
+    "testDurationSeconds": 186.961,
+    "unsignedDeviceArchive": "passed",
+    "signedIpa": false,
+    "artifact": {
+      "id": 12545122951,
+      "name": "ios-simulator-and-validation",
+      "size_in_bytes": 16624580,
+      "url": "https://api.github.com/repos/xiao7511/nobi-photos/actions/artifacts/12545122951",
+      "archive_download_url": "https://api.github.com/repos/xiao7511/nobi-photos/actions/artifacts/12545122951/zip",
+      "expired": false,
+      "created_at": "2026-10-24T02:46:23Z",
+      "expires_at": "2027-01-22T02:32:11Z",
+      "updated_at": "2026-10-24T02:46:23Z",
+      "digest": "sha256:88c59b2aae86879d16b7dddcf72db4952f44fe96a3dadea8830f8a74f044b2ff",
+      "workflow_run": {
+        "id": 40054573104,
+        "repository_id": 1428425183,
+        "head_repository_id": 1428425183,
+        "head_branch": "main",
+        "head_sha": "09e56b59b0eb53c648c0f4d630c919c319e23204"
+      }
+    },
+    "artifactDownloadedLocally": false,
+    "xcode": "26.6",
+    "simulator": {
+      "device": "iPhone 17 Pro",
+      "os": "26.5"
+    }
+  },
+  "privatePhotos": false,
+  "status": "passed"
+}

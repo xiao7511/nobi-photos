@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
+import { URL } from 'node:url'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import process from 'node:process'
 import console from 'node:console'
@@ -13,6 +14,9 @@ import { chromium } from '@playwright/test'
 const serial = process.env.NOBI_PHONE_SERIAL
 assert.ok(serial && /^[\w.-]+$/.test(serial) && !serial.startsWith('emulator-'))
 const baseline = process.env.NOBI_PHONE_BASELINE === '1'
+const expectedVersion = JSON.parse(
+  await readFile(new URL('../package.json', import.meta.url), 'utf8'),
+).version
 const run = promisify(execFile)
 const sdk = process.env.ANDROID_HOME || join(process.env.LOCALAPPDATA, 'Android', 'Sdk')
 const adbPath = join(sdk, 'platform-tools', 'adb.exe')
@@ -82,9 +86,9 @@ try {
   const errors = []
   page.on('pageerror', () => errors.push('pageerror'))
   await page.waitForFunction(() => globalThis.Capacitor?.getPlatform() === 'android')
-  await page.evaluate(() => {
-    location.hash = '/privacy'
-  })
+  await page.locator('.native-topbar h1').waitFor()
+  if (!(await page.locator('.policy-list').count()))
+    await page.locator('.native-topbar a[href="#/privacy"]').click()
   await page.locator('.policy-list').waitFor()
   // Only record UI geometry and app identity, never DOM dumps, photo names or images.
   const geometry = async () =>
@@ -234,7 +238,7 @@ try {
         }
       })
       assert.equal(runtime.appId, 'app.nobi.photos')
-      assert.equal(runtime.version, '0.5.0')
+      assert.equal(runtime.version, expectedVersion)
       assert.equal(runtime.sqliteVersion, 2)
       const result = {
         checkedAt: new Date().toISOString(),

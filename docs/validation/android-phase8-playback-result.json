@@ -1,0 +1,48 @@
+{
+  "checkedAt": "2026-10-24T02:32:17.932Z",
+  "version": "0.8.0",
+  "platform": "Android 14 / API 34 dedicated AVD",
+  "fixturePhotos": 103,
+  "geometry": {
+    "viewport": {
+      "width": 412,
+      "height": 915
+    },
+    "image": {
+      "width": 412,
+      "height": 915.047607421875
+    },
+    "natural": {
+      "width": 512,
+      "height": 929
+    },
+    "fit": "cover",
+    "pixelRatio": 1.3125
+  },
+  "aiAndCategoryAlbumDetails": true,
+  "nativeBackToList": true,
+  "originalPixels": true,
+  "defaultSilent": true,
+  "recording": {
+    "count": 1,
+    "paused": false,
+    "src": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Carefree.mp3",
+    "time": 0.500006,
+    "duration": 205.139625,
+    "ready": 4
+  },
+  "nativeOverlap": {
+    "leaseId": "fc3cda04-8ff8-4263-ac2a-ff3b75c95303",
+    "thirdRejected": true
+  },
+  "categoryMusic": [
+    "Carefree",
+    "Carefree"
+  ],
+  "slideshowAdvanceAndPause": true,
+  "backgroundStopsAudioAndReleasesOriginal": true,
+  "closedViewerStopsAudio": true,
+  "offlinePhotosThenOptInInternetMusic": true,
+  "privatePhotos": false,
+  "status": "passed"
+}
