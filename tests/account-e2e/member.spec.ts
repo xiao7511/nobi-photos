@@ -142,6 +142,20 @@ test('verified account creates local JPEG, composes album and shares only after 
   await page.getByLabel('照片裁切').selectOption('square')
   await page.getByRole('button', { name: '生成成品预览' }).click()
   await expect(page.getByAltText('本地生成的成品预览')).toBeVisible()
+  const detail = await page
+    .getByAltText('本地生成的成品预览')
+    .evaluate((image: HTMLImageElement) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 200
+      const context = canvas.getContext('2d')!
+      context.drawImage(image, 0, 0, 200, 200)
+      const data = context.getImageData(0, 0, 200, 200).data
+      let dark = 0
+      for (let i = 0; i < data.length; i += 4)
+        if (data[i]! + data[i + 1]! + data[i + 2]! < 450) dark++
+      return dark / (200 * 200)
+    })
+  expect(detail).toBeGreaterThan(0.05)
   await expect(page.getByRole('button', { name: '选择应用分享' })).toBeDisabled()
   const downloadEvent = page.waitForEvent('download')
   await page.getByRole('button', { name: '下载成品' }).click()
@@ -174,6 +188,9 @@ test('verified account creates local JPEG, composes album and shares only after 
   await expect(page.getByRole('link', { name: '打开新相册' })).toBeVisible()
   await expect(page.getByAltText('本地生成的成品预览')).toBeVisible()
   await page.getByRole('heading', { name: '图片创作室', exact: true }).click()
+  await page
+    .getByAltText('本地生成的成品预览')
+    .screenshot({ path: `test-results/${info.project.name}-phase10-composition.png` })
   await page.screenshot({
     path: `test-results/${info.project.name}-phase10-studio.png`,
     fullPage: true,

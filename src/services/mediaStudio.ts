@@ -41,6 +41,31 @@ export async function renderMedia(
   try {
     const context = canvas.getContext('2d', { willReadFrequently: true })
     if (!context) throw new Error('当前设备不支持本地图片创作')
+    const paint = (
+      image: HTMLImageElement,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+    ) => {
+      const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight)
+      const drawnWidth = image.naturalWidth * scale,
+        drawnHeight = image.naturalHeight * scale
+      context.save()
+      context.beginPath()
+      context.rect(x, y, width, height)
+      context.clip()
+      // Draw the complete image then clip. SVGs without explicit dimensions can use
+      // viewBox units for source cropping, unlike their naturalWidth/naturalHeight.
+      context.drawImage(
+        image,
+        x + (width - drawnWidth) / 2,
+        y + (height - drawnHeight) / 2,
+        drawnWidth,
+        drawnHeight,
+      )
+      context.restore()
+    }
     if (options.collage) {
       canvas.width = canvas.height = 2160
       context.fillStyle = '#f6f7f2'
@@ -62,24 +87,14 @@ export async function renderMedia(
           const scale = Math.min(1, 2400 / Math.max(rect.width, rect.height))
           canvas.width = Math.max(1, Math.round(rect.width * scale))
           canvas.height = Math.max(1, Math.round(rect.height * scale))
-          context.drawImage(
-            image,
-            rect.x,
-            rect.y,
-            rect.width,
-            rect.height,
-            0,
-            0,
-            canvas.width,
-            canvas.height,
-          )
+          paint(image, 0, 0, canvas.width, canvas.height)
         } else {
           const columns = Math.ceil(Math.sqrt(photos.length)),
             gap = 20
           const size = (canvas.width - (columns + 1) * gap) / columns
           const x = gap + (i % columns) * (size + gap),
             y = gap + Math.floor(i / columns) * (size + gap)
-          context.drawImage(image, rect.x, rect.y, rect.width, rect.height, x, y, size, size)
+          paint(image, x, y, size, size)
         }
       } finally {
         if (image) image.src = ''
