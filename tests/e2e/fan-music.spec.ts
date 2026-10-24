@@ -107,6 +107,11 @@ test('local audio survives native-style viewer closure, plays offline, and is re
   let viewer = page.getByRole('dialog', { name: '照片详情' })
   await viewer.getByRole('button', { name: '选择背景音乐' }).click()
   const picker = page.getByRole('dialog', { name: '选择背景音乐' })
+  // A file-input cancel bubbles; it must not be interpreted as dialog dismissal.
+  await picker
+    .locator('input[type=file]')
+    .dispatchEvent('cancel', { bubbles: true, cancelable: false })
+  await expect(picker).toBeVisible()
   const fileChooser = page.waitForEvent('filechooser')
   await picker.getByRole('button', { name: /从手机选择音乐文件/ }).click()
   await (

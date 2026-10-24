@@ -147,6 +147,9 @@ try {
   await setTimeout(1000)
   assert.ok((await captureUI()).some((n) => n.package === 'com.android.documentsui'))
   await adb('shell', 'input', 'keyevent', '4')
+  await page.waitForFunction(
+    async () => (await globalThis.Capacitor.Plugins.App.getState()).isActive,
+  )
   await picker.waitFor()
   assert.equal(await viewer.count(), 0)
   assert.equal(await picker.locator('.music-local-selection').count(), 0)

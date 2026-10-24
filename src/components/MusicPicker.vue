@@ -43,7 +43,7 @@ onUnmounted(() => {
     ref="dialog"
     class="music-picker"
     aria-labelledby="music-picker-title"
-    @cancel.prevent="music.open = false"
+    @cancel.self.prevent="music.open = false"
   >
     <header class="music-picker-heading">
       <div>
