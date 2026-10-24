@@ -26,9 +26,18 @@ const fixtureNames = await adb(
   'content query --uri content://media/external/images/media --projection _display_name',
 )
 const names = [...fixtureNames.matchAll(/_display_name=([^\r\n]+)/g)].map((r) => r[1])
+if (names.includes('nobi_hd_4032.png')) {
+  const hdHash = await adb('shell', 'sha256sum', '/sdcard/DCIM/NobiHDReference/nobi_hd_4032.png')
+  assert.ok(
+    hdHash.startsWith('bb348f053a3107f0b838e76471c89e5c3b509b282cb5d4c2c426e396725ffb6b'),
+    'Unknown HD fixture content',
+  )
+}
 assert.ok(
   names.length >= 102 &&
-    names.every((name) => /^(synthetic_\d{3}\.png|nobi_ai_reference_parrot\.jpg)$/.test(name)),
+    names.every((name) =>
+      /^(synthetic_\d{3}\.png|nobi_ai_reference_parrot\.jpg|nobi_hd_4032\.png)$/.test(name),
+    ),
   'Only synthetic/public fixture libraries permitted',
 )
 const output = resolve('artifacts/native-playback')
@@ -96,9 +105,13 @@ try {
     })
   await adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'enable')
   await adb('shell', 'svc', 'wifi', 'disable')
+  // Use the mounted app navigation: an early raw hash change can race initial lazy routing.
+  await page.locator('.native-topbar a[href="#/privacy"]').click()
+  await page.getByRole('button', { name: '立即扫描', exact: true }).click()
   await page.locator('.mobile-nav a[href="#/albums"]').click()
   const ai = page.locator('.user-album').filter({ hasText: /我的动物朋友|智能 · 宠物与动物/ })
   await ai.click()
+  await page.getByRole('button', { name: '返回相册列表' }).waitFor()
   assert.equal(await page.locator('.album-card').count(), 0)
   assert.ok((await page.getByRole('heading', { level: 1 }).last().boundingBox()).y < 180)
   assert.ok((await page.locator('.photo-card').count()) >= 1)
@@ -210,6 +223,7 @@ try {
 } finally {
   await browser?.close()
   if (port) await adb('forward', '--remove', `tcp:${port}`)
+  await adb('shell', 'am', 'force-stop', 'app.nobi.photos')
   if (airplane !== '1') await adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'disable')
   if (wifi === '1' || wifi === '2') await adb('shell', 'svc', 'wifi', 'enable')
 }

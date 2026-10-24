@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-10-24T01:47:57.907Z",
+  "version": "0.7.0",
+  "platform": "Android 14 / API 34 dedicated AVD",
+  "fixturePhotos": 103,
+  "geometry": {
+    "viewport": {
+      "width": 412,
+      "height": 915
+    },
+    "image": {
+      "width": 412,
+      "height": 915.047607421875
+    },
+    "natural": {
+      "width": 512,
+      "height": 929
+    },
+    "fit": "cover",
+    "pixelRatio": 1.3125
+  },
+  "aiAndCategoryAlbumDetails": true,
+  "nativeBackToList": true,
+  "originalPixels": true,
+  "defaultSilent": true,
+  "musicRms": 0.03554416295310743,
+  "categoryMusic": [
+    "日常小确幸",
+    "小小伙伴"
+  ],
+  "slideshowAdvanceAndPause": true,
+  "backgroundStopsAudioAndReleasesOriginal": true,
+  "closedViewerStopsAudio": true,
+  "airplaneMode": true,
+  "wifiDisabled": true,
+  "privatePhotos": false,
+  "status": "passed",
+  "sourceCommit": "6621b0d5630fa4ca45ab5937c9c99db1c8ae07ea"
+}

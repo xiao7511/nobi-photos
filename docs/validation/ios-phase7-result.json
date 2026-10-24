@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-10-24T01:43:00Z",
+  "sourceCommit": "6621b0d5630fa4ca45ab5937c9c99db1c8ae07ea",
+  "workflowRun": 40050185162,
+  "workflowUrl": "https://github.com/xiao7511/nobi-photos/actions/runs/40050185162",
+  "jobs": { "verify": "success", "android": "success", "ios": "success" },
+  "version": "0.7.0",
+  "build": 8,
+  "xcode": "26.6",
+  "platform": "GitHub macOS / iOS Simulator",
+  "nativeSimulatorBuild": true,
+  "unsignedArm64Archive": true,
+  "uiTests": { "executed": 2, "failures": 0 },
+  "indexedPhotos": 107,
+  "privatePhotos": false,
+  "checks": {
+    "localOriginalViewerAndZoom": true,
+    "categoryAlbumDetail": true,
+    "slideshowAdvances": true,
+    "slideshowPauseControl": true,
+    "musicControlActiveDuringSlideshow": true,
+    "photoKitSQLiteVision": true,
+    "coldStartCountPreserved": true,
+    "tabsThemePrivacyKeyboard": true
+  },
+  "audioWaveformMeasuredOnIos": false,
+  "artifact": {
+    "id": 12543875244,
+    "bytes": 16559125,
+    "sha256": "9585ed5e772997b7fd1844782440e58b8f7251bd5959932a3f14b525e91635aa",
+    "digestSource": "GitHub Actions artifact API",
+    "downloadedLocally": false,
+    "expiresAt": "2027-01-22T01:31:30Z"
+  },
+  "notVerified": ["physical iPhone", "signed IPA", "speaker listening quality and hardware mute behavior"],
+  "status": "passed"
+}
