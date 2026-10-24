@@ -224,7 +224,7 @@ function decode(source: string, signal: AbortSignal): Promise<HTMLImageElement> 
 async function slide(signal: AbortSignal) {
   await nextTick()
   if (signal.aborted) return
-  stage.value?.getBoundingClientRect() // Commit the incoming off-screen position before moving it.
+  stage.value?.querySelector('.viewer-track')?.getBoundingClientRect()
   sliding.value = true
   await new Promise<void>((resolve) => {
     const done = () => {
@@ -319,14 +319,7 @@ async function load(target: Photo | undefined = photo.value, offset = 1) {
   }
 }
 function frameStyle(position: number) {
-  const x =
-    position === 0
-      ? sliding.value
-        ? -direction.value * 100
-        : 0
-      : sliding.value
-        ? 0
-        : direction.value * 100
+  const x = position === 0 ? 0 : direction.value * 100
   return {
     ...(zoom.value > 1 ? zoomSize.value : {}),
     objectFit: fill.value ? ('cover' as const) : ('contain' as const),
@@ -485,17 +478,23 @@ onUnmounted(() => {
         @touchend.passive="end"
         @dblclick="setZoom(zoom === 1 ? 2 : 1)"
       >
-        <img
-          v-for="(frame, position) in frames"
-          :key="frame.token"
-          class="viewer-image"
-          :class="{ 'is-current': position === 0, 'is-sliding': sliding }"
-          :aria-hidden="position !== 0"
-          :src="frame.source || undefined"
-          :alt="position === 0 ? frame.photo.title : ''"
-          :style="frameStyle(position)"
-          draggable="false"
-        />
+        <div
+          class="viewer-track"
+          :class="{ 'is-sliding': sliding }"
+          :style="{ transform: `translateX(${sliding ? -direction * 100 : 0}%)` }"
+        >
+          <img
+            v-for="(frame, position) in frames"
+            :key="frame.token"
+            class="viewer-image"
+            :class="{ 'is-current': position === 0 }"
+            :aria-hidden="position !== 0"
+            :src="frame.source || undefined"
+            :alt="position === 0 ? frame.photo.title : ''"
+            :style="frameStyle(position)"
+            draggable="false"
+          />
+        </div>
       </div>
       <footer v-show="controls || details" class="viewer-toolbar viewer-bottom">
         <button

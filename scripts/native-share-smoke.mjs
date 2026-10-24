@@ -141,7 +141,7 @@ try {
   assert.ok(cleaned)
   assert.deepEqual(remote, [])
   await page.getByRole('link', { name: '返回我的空间', exact: false }).click()
-  await page.getByRole('link', { name: '隐私与安全中心', exact: false }).click()
+  await page.getByRole('link', { name: '隐私与安全中心', exact: true }).click()
   const info = await page.evaluate(() => globalThis.Capacitor.Plugins.App.getInfo())
   assert.equal(info.version, JSON.parse(await readFile('package.json', 'utf8')).version)
   await writeFile(
