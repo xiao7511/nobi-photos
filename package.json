@@ -1,8 +1,8 @@
 {
   "name": "nobi-photos",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
-  "description": "NOBI Photos: private local original photo viewer and AI album organization, Phase 6",
+  "description": "NOBI Photos: fullscreen albums, offline slideshow and category music, Phase 7",
   "scripts": {
     "dev": "vite",
     "lint": "eslint . --max-warnings 0",

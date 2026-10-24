@@ -249,6 +249,7 @@ try {
     await detail.getByRole('button', { name: '保存标签', exact: true }).click()
     await detail.locator('.chip').filter({ hasText: '原生验证' }).waitFor()
     await page.keyboard.press('Escape')
+    await page.getByRole('button', { name: '返回相册列表' }).click()
     await page.reload()
     await page.locator('.user-album').filter({ hasText: '原生合成相册' }).waitFor()
     const saved = await page.evaluate(() =>

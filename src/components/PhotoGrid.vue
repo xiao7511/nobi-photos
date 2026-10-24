@@ -5,23 +5,35 @@ import type { Photo } from '../domain/models'
 import { useLibrary } from '../stores/library'
 import PhotoThumbnail from './PhotoThumbnail.vue'
 import PhotoViewer from './PhotoViewer.vue'
-withDefaults(
+import type { MusicTheme } from '../domain/albumMusic'
+const props = withDefaults(
   defineProps<{
     photos: Photo[]
     compact?: boolean
     selecting?: boolean
     selectedIds?: string[]
+    musicTheme?: MusicTheme
   }>(),
-  { compact: false, selecting: false, selectedIds: () => [] },
+  { compact: false, selecting: false, selectedIds: () => [], musicTheme: undefined },
 )
 const emit = defineEmits<{ toggle: [id: string] }>()
 const library = useLibrary()
 const selected = ref('')
+const autoplay = ref(false)
 let opener: HTMLElement | null = null
 function open(photo: Photo, event: MouseEvent) {
   opener = event.currentTarget as HTMLElement
   selected.value = photo.id
+  autoplay.value = false
 }
+function play() {
+  const first = props.photos[0]
+  if (!first) return
+  opener = document.activeElement as HTMLElement
+  autoplay.value = true
+  selected.value = first.id
+}
+defineExpose({ play })
 function close() {
   selected.value = ''
   opener?.focus()
@@ -72,5 +84,12 @@ function close() {
       library.isNative ? '管理本机相册与权限 →' : '管理或恢复示例相册 →'
     }}</RouterLink>
   </div>
-  <PhotoViewer v-if="selected" :photos="photos" :initial-id="selected" @close="close" />
+  <PhotoViewer
+    v-if="selected"
+    :photos="photos"
+    :initial-id="selected"
+    :autoplay="autoplay"
+    :music-theme="musicTheme"
+    @close="close"
+  />
 </template>

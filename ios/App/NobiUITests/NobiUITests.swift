@@ -85,6 +85,25 @@ final class NobiUITests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: 20))
         start.tap()
         XCTAssertTrue(text("本地 AI 分析完成").waitForExistence(timeout: 240))
+        let category = app.webViews.buttons.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "未分类", "张照片")).firstMatch
+        XCTAssertTrue(category.waitForExistence(timeout: 20))
+        for _ in 0..<6 { if category.isHittable { break }; app.swipeUp() }
+        category.tap()
+        XCTAssertTrue(app.webViews.buttons["返回相册列表"].firstMatch.waitForExistence(timeout: 15))
+        app.webViews.buttons["播放相册"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["原图"].firstMatch.waitForExistence(timeout: 30))
+        let counter = app.webViews.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+ / [0-9]+")).firstMatch
+        XCTAssertTrue(counter.waitForExistence(timeout: 10))
+        let firstCounter = counter.label
+        let music = app.webViews.switches["开启分类配乐"].firstMatch
+        XCTAssertTrue(music.waitForExistence(timeout: 10))
+        music.tap()
+        XCTAssertTrue(text("日常小确幸").waitForExistence(timeout: 15))
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label != %@", firstCounter), object: counter)], timeout: 20) == .completed)
+        XCTAssertTrue(app.webViews.switches["关闭背景音乐"].firstMatch.exists)
+        app.webViews.switches["暂停轮播"].firstMatch.tap()
+        app.webViews.buttons["关闭照片详情"].firstMatch.tap()
+        app.webViews.buttons["返回相册列表"].firstMatch.tap()
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "ios-synthetic-local-ai"
         shot.lifetime = .keepAlways

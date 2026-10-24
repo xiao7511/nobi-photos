@@ -1,6 +1,6 @@
 # iOS 开发、构建与验证
 
-版本 0.6.0 / build 7，bundle ID `app.nobi.photos`。iOS 原生工程使用 Capacitor 8、Swift Package Manager、本地 PhotoKit / SQLite 与 Apple Vision，无需注册或云端业务 API。
+版本 0.7.0 / build 8，bundle ID `app.nobi.photos`。iOS 原生工程使用 Capacitor 8、Swift Package Manager、本地 PhotoKit / SQLite 与 Apple Vision，无需注册或云端业务 API。
 
 ## 当前交付
 

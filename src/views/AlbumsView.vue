@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { ArrowUpRight, FolderHeart, X, Plus, Pencil, Trash2 } from '@lucide/vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowUpRight, ArrowLeft, FolderHeart, Plus, Pencil, Trash2, Play } from '@lucide/vue'
 import { useLibrary } from '../stores/library'
 import PhotoGrid from '../components/PhotoGrid.vue'
 import PhotoThumbnail from '../components/PhotoThumbnail.vue'
@@ -8,30 +9,62 @@ import type { Category } from '../domain/models'
 import AlbumEditor from '../components/AlbumEditor.vue'
 import AlbumRename from '../components/AlbumRename.vue'
 import SmartOrganization from '../components/SmartOrganization.vue'
+import { albumMusicTheme, musicScores } from '../domain/albumMusic'
 const library = useLibrary()
-const selected = ref<Category | '收藏' | null>(null)
-const selectedUser = ref(''),
-  editor = ref<InstanceType<typeof AlbumEditor>>(),
+const route = useRoute(),
+  router = useRouter()
+const selectedId = computed(() => (typeof route.query.album === 'string' ? route.query.album : ''))
+const editor = ref<InstanceType<typeof AlbumEditor>>(),
   confirmation = ref<HTMLDialogElement>(),
   actionError = ref('')
-const userAlbum = computed(() => library.albums.find((a) => a.id === selectedUser.value))
+const userAlbum = computed(() => library.albums.find((a) => a.id === selectedId.value))
 const rename = ref<InstanceType<typeof AlbumRename>>()
-const userPhotos = computed(() =>
-  library.photos.filter((p) => userAlbum.value?.photoIds.includes(p.id)),
+const grid = ref<InstanceType<typeof PhotoGrid>>(),
+  heading = ref<HTMLElement>()
+const selected = computed(() =>
+  selectedId.value === 'favorites'
+    ? '收藏'
+    : selectedId.value.startsWith('category:')
+      ? selectedId.value.slice(9)
+      : '',
 )
+const validCategory = computed(() =>
+  ['自然', '旅行', '生活', '建筑', '未分类', '收藏'].includes(selected.value),
+)
+const title = computed(
+  () => userAlbum.value?.name ?? (validCategory.value ? selected.value : '相册不可用'),
+)
+const visible = computed(() => {
+  if (userAlbum.value) {
+    const ids = new Set(userAlbum.value.photoIds)
+    return library.photos.filter((p) => ids.has(p.id))
+  }
+  if (!validCategory.value) return []
+  return selected.value === '收藏'
+    ? library.favorites
+    : library.photos.filter((p) => p.category === selected.value)
+})
+const theme = computed(() => albumMusicTheme(selectedId.value, visible.value))
+watch(selectedId, async (id) => {
+  if (id) {
+    await nextTick()
+    heading.value?.focus()
+  }
+})
 function chooseUser(id: string) {
-  selected.value = null
-  selectedUser.value = id
+  void router.push({ path: '/albums', query: { album: id } })
 }
 function chooseCategory(category: Category | '收藏') {
-  selectedUser.value = ''
-  selected.value = category
+  chooseUser(category === '收藏' ? 'favorites' : `category:${category}`)
+}
+function closeAlbum() {
+  void router.replace('/albums')
 }
 async function removeAlbum() {
   if (!userAlbum.value) return
   try {
     await library.deleteAlbum(userAlbum.value.id)
-    selectedUser.value = ''
+    closeAlbum()
     confirmation.value?.close()
     actionError.value = ''
   } catch (e) {
@@ -46,119 +79,122 @@ const albums = computed(() =>
     }),
   ),
 )
-const visible = computed(() =>
-  selected.value === '收藏'
-    ? library.favorites
-    : library.photos.filter((p) => p.category === selected.value),
-)
 </script>
 <template>
-  <section class="page-heading">
-    <div>
-      <template v-if="!library.isNative">
-        <span class="eyebrow">A PLACE FOR EVERY MEMORY</span>
-        <h1>喜欢的事物，自成一集<span class="title-dot">.</span></h1>
-        <p>把散落的瞬间，整理成生活的章节。</p>
-      </template>
-      <p v-else>用相册整理你的回忆，仅在本机保存。</p>
-    </div>
-    <button class="button primary" @click="editor?.open()"><Plus :size="17" /> 新建相册</button>
-  </section>
-  <SmartOrganization />
-  <div class="feature-panel soft">
-    <FolderHeart :size="35" />
-    <div>
-      <h2>我的心动收藏</h2>
-      <p>{{ library.favorites.length }} 个想再看一遍的瞬间</p>
-    </div>
-    <button class="button" @click="chooseCategory('收藏')">
-      打开收藏 <ArrowUpRight :size="17" />
+  <section v-if="selectedId" class="album-detail" aria-label="相册详情">
+    <button class="button album-back" @click="closeAlbum">
+      <ArrowLeft :size="18" /> 返回相册列表
     </button>
-  </div>
-  <section class="spaced">
-    <div class="section-title">
-      <h2>自建相册</h2>
-      <span>{{ library.albums.length }} 个 · 本地保存</span>
-    </div>
-    <div v-if="library.albums.length" class="album-grid">
+    <div class="album-detail-heading">
+      <div>
+        <h1 ref="heading" tabindex="-1">{{ title }}</h1>
+        <p>{{ visible.length }} 张照片</p>
+      </div>
       <button
-        v-for="album in library.albums"
-        :key="album.id"
-        class="album-card user-album"
-        @click="chooseUser(album.id)"
+        class="button primary"
+        :disabled="visible.length < 2 || library.loading"
+        @click="grid?.play()"
       >
-        <PhotoThumbnail
-          v-if="library.photos.find((p) => album.photoIds.includes(p.id))"
-          :photo="library.photos.find((p) => album.photoIds.includes(p.id))!"
-        />
+        <Play :size="18" /> 播放相册
+      </button>
+    </div>
+    <div v-if="userAlbum" class="album-detail-actions">
+      <button class="button" @click="rename?.open(userAlbum)">
+        <Pencil :size="15" /> 修改名称
+      </button>
+      <button class="button" @click="editor?.open(userAlbum)">
+        <Pencil :size="15" /> 编辑相册
+      </button>
+      <button class="button danger" @click="confirmation?.showModal()">
+        <Trash2 :size="15" /> 移除相册
+      </button>
+    </div>
+    <p v-if="library.loading" class="body-text" role="status">正在读取相册…</p>
+    <template v-if="userAlbum || validCategory">
+      <p class="album-music-note body-text">
+        轮播时可开启「{{ musicScores[theme].title }}」分类配乐，默认静音。
+      </p>
+      <PhotoGrid ref="grid" :photos="visible" :music-theme="theme" />
+    </template>
+    <p v-if="!library.loading && !userAlbum && !validCategory" class="banner" role="status">
+      相册已移除或暂不可访问，请返回列表重新选择。
+    </p>
+  </section>
+  <template v-else>
+    <section class="page-heading">
+      <div>
+        <template v-if="!library.isNative">
+          <span class="eyebrow">A PLACE FOR EVERY MEMORY</span>
+          <h1>喜欢的事物，自成一集<span class="title-dot">.</span></h1>
+          <p>把散落的瞬间，整理成生活的章节。</p>
+        </template>
+        <p v-else>用相册整理你的回忆，仅在本机保存。</p>
+      </div>
+      <button class="button primary" @click="editor?.open()"><Plus :size="17" /> 新建相册</button>
+    </section>
+    <SmartOrganization />
+    <div class="feature-panel soft">
+      <FolderHeart :size="35" />
+      <div>
+        <h2>我的心动收藏</h2>
+        <p>{{ library.favorites.length }} 个想再看一遍的瞬间</p>
+      </div>
+      <button class="button" @click="chooseCategory('收藏')">
+        打开收藏 <ArrowUpRight :size="17" />
+      </button>
+    </div>
+    <section class="spaced">
+      <div class="section-title">
+        <h2>自建相册</h2>
+        <span>{{ library.albums.length }} 个 · 本地保存</span>
+      </div>
+      <div v-if="library.albums.length" class="album-grid">
+        <button
+          v-for="album in library.albums"
+          :key="album.id"
+          class="album-card user-album"
+          @click="chooseUser(album.id)"
+        >
+          <PhotoThumbnail
+            v-if="library.photos.find((p) => album.photoIds.includes(p.id))"
+            :photo="library.photos.find((p) => album.photoIds.includes(p.id))!"
+          />
+          <div v-else class="album-placeholder"></div>
+          <div>
+            <span
+              ><strong>{{ album.name }}</strong
+              ><small>{{ album.photoIds.length }} 张照片</small></span
+            ><ArrowUpRight :size="21" />
+          </div>
+        </button>
+      </div>
+      <div v-else class="album-empty">
+        <p>给一场旅行、一个周末，留一个专属位置。</p>
+        <button class="button" @click="editor?.open()"><Plus :size="16" /> 创建第一个相册</button>
+      </div>
+    </section>
+    <div class="section-title spaced">
+      <h2>{{ library.isNative ? '本机照片' : '生活的四个切面' }}</h2>
+      <span>{{ library.isNative ? '系统照片索引' : '按示例标签整理' }}</span>
+    </div>
+    <div class="album-grid">
+      <button
+        v-for="album in albums"
+        :key="album.name"
+        class="album-card"
+        @click="chooseCategory(album.name)"
+      >
+        <PhotoThumbnail v-if="album.photos[0]" :photo="album.photos[0]" />
         <div v-else class="album-placeholder"></div>
         <div>
           <span
             ><strong>{{ album.name }}</strong
-            ><small>{{ album.photoIds.length }} 张照片</small></span
+            ><small>{{ album.photos.length }} 张照片</small></span
           ><ArrowUpRight :size="21" />
         </div>
       </button>
     </div>
-    <div v-else class="album-empty">
-      <p>给一场旅行、一个周末，留一个专属位置。</p>
-      <button class="button" @click="editor?.open()"><Plus :size="16" /> 创建第一个相册</button>
-    </div>
-  </section>
-  <div class="section-title spaced">
-    <h2>{{ library.isNative ? '本机照片' : '生活的四个切面' }}</h2>
-    <span>{{ library.isNative ? '尚未进行 AI 分类' : '按示例标签整理' }}</span>
-  </div>
-  <div class="album-grid">
-    <button
-      v-for="album in albums"
-      :key="album.name"
-      class="album-card"
-      @click="chooseCategory(album.name)"
-    >
-      <PhotoThumbnail v-if="album.photos[0]" :photo="album.photos[0]" />
-      <div v-else class="album-placeholder"></div>
-      <div>
-        <span
-          ><strong>{{ album.name }}</strong
-          ><small>{{ album.photos.length }} 张照片</small></span
-        ><ArrowUpRight :size="21" />
-      </div>
-    </button>
-  </div>
-  <section v-if="selected" class="spaced">
-    <div class="library-toolbar">
-      <div class="section-title">
-        <h2>{{ selected }}</h2>
-        <span>{{ visible.length }} 张照片</span>
-      </div>
-      <button class="icon-button" aria-label="关闭分类" @click="selected = null">
-        <X :size="20" />
-      </button>
-    </div>
-    <PhotoGrid :photos="visible" />
-  </section>
-  <section v-if="userAlbum" class="spaced">
-    <div class="library-toolbar">
-      <div class="section-title">
-        <h2>{{ userAlbum.name }}</h2>
-        <span>{{ userPhotos.length }} 张照片</span>
-      </div>
-      <div class="data-actions">
-        <button class="button" @click="rename?.open(userAlbum)">
-          <Pencil :size="15" /> 修改名称
-        </button>
-        <button class="button" @click="editor?.open(userAlbum)">
-          <Pencil :size="15" /> 编辑相册</button
-        ><button class="button danger" @click="confirmation?.showModal()">
-          <Trash2 :size="15" /> 移除相册</button
-        ><button class="icon-button" aria-label="关闭自建相册" @click="selectedUser = ''">
-          <X :size="20" />
-        </button>
-      </div>
-    </div>
-    <PhotoGrid :photos="userPhotos" />
-  </section>
+  </template>
   <AlbumEditor ref="editor" @saved="chooseUser" />
   <AlbumRename ref="rename" />
   <dialog ref="confirmation" class="confirm-dialog" aria-labelledby="remove-album-title">

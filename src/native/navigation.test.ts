@@ -12,6 +12,13 @@ function state(path: string) {
   return { router, replace, minimize }
 }
 describe('Android back navigation', () => {
+  it('returns from an opened album to its list before leaving the tab', async () => {
+    const s = state('/albums')
+    s.router.currentRoute.value.query = { album: 'user:smart:animals' }
+    await handleNativeBack(s.router, s.minimize)
+    expect(s.replace).toHaveBeenCalledWith('/albums')
+    expect(s.minimize).not.toHaveBeenCalled()
+  })
   it('runs dialog cancellation before navigation so unsaved changes are not submitted', async () => {
     const dialog = document.createElement('dialog')
     dialog.setAttribute('open', '')

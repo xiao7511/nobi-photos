@@ -17,6 +17,8 @@ test('albums and manual tags persist, search offline, and album removal leaves p
   await editor.getByRole('checkbox', { name: '将海风来信加入相册', exact: true }).check()
   await editor.getByRole('button', { name: '保存相册', exact: true }).click()
   await expect(page.getByRole('dialog')).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: '周末小记', exact: true })).toBeInViewport()
+  await page.getByRole('button', { name: '返回相册列表' }).click()
   await page.reload()
   await expect(page.locator('.user-album')).toContainText('周末小记')
   await page.locator('.user-album').click()
