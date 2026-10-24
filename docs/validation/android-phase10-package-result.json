@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-10-24T17:58:23.5789812+08:00",
+  "sourceCommit": "136725d6e8f1d8cee17b6105835f76266e422d25",
+  "package": "app.nobi.photos",
+  "versionName": "0.10.0",
+  "versionCode": 11,
+  "variant": "debug",
+  "apk": "artifacts/android-0.10.0/NOBI-Photos-0.10.0-debug.apk",
+  "bytes": 37225164,
+  "sha256": "df752480b9d57fcb159e4b0f282d4ed47d6239d9962a20d3ef4d6be0cf312499",
+  "minSdk": 24,
+  "targetSdk": 36,
+  "compileSdk": 36,
+  "abis": ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"],
+  "signatureVerified": true,
+  "signatureScheme": "v2",
+  "signer": "Android Debug",
+  "permissions": [
+    "android.permission.INTERNET",
+    "android.permission.READ_EXTERNAL_STORAGE",
+    "android.permission.READ_MEDIA_IMAGES",
+    "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+    "app.nobi.photos.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+  ],
+  "backupDisabled": true,
+  "extractionExclusions": 10,
+  "internetPermission": true,
+  "remoteWebServer": false,
+  "bridgeLogging": "none",
+  "bundledWebFilesHashMatched": 43,
+  "nativePlugins": [
+    "@capacitor-community/sqlite",
+    "@capacitor/app",
+    "@capacitor/filesystem",
+    "@capacitor/share",
+    "@nobi/photo-library"
+  ],
+  "status": "passed"
+}

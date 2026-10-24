@@ -1,0 +1,50 @@
+{
+  "checkedAt": "2026-10-24T10:11:34Z",
+  "version": "0.10.0",
+  "build": 11,
+  "sourceCommit": "136725d6e8f1d8cee17b6105835f76266e422d25",
+  "runId": 40083930748,
+  "runUrl": "https://github.com/xiao7511/nobi-photos/actions/runs/40083930748",
+  "jobs": {
+    "verify": "success",
+    "android": "success",
+    "ios": "success"
+  },
+  "unitTests": 115,
+  "browserTests": 32,
+  "accountBrowserTests": 6,
+  "nativeIosTests": 3,
+  "nativeIosFailures": 0,
+  "nativeIosDurationSeconds": 177.387,
+  "iosTestNames": [
+    "testNativeLibraryAndOnDeviceAI",
+    "testOptionalAccountAndGuestCreationBoundary",
+    "testTabsThemePrivacyAndKeyboard"
+  ],
+  "unsignedArm64Archive": true,
+  "signedIpa": false,
+  "physicalIphoneTested": false,
+  "artifact": {
+    "id": 12556393605,
+    "name": "ios-simulator-and-validation",
+    "size_in_bytes": 17618685,
+    "url": "https://api.github.com/repos/xiao7511/nobi-photos/actions/artifacts/12556393605",
+    "archive_download_url": "https://api.github.com/repos/xiao7511/nobi-photos/actions/artifacts/12556393605/zip",
+    "expired": false,
+    "created_at": "2026-10-24T10:11:34Z",
+    "expires_at": "2027-01-22T09:56:27Z",
+    "updated_at": "2026-10-24T10:11:34Z",
+    "digest": "sha256:ce30f6518d5e9cff4998f7ca48147e7320256c81175e14ef5025c1371db18ae9",
+    "workflow_run": {
+      "id": 40083930748,
+      "repository_id": 1428425183,
+      "head_repository_id": 1428425183,
+      "head_branch": "main",
+      "head_sha": "136725d6e8f1d8cee17b6105835f76266e422d25"
+    }
+  },
+  "externalEmailDeliveryTested": false,
+  "publicRegistrationEnabled": false,
+  "privatePhotos": false,
+  "status": "passed"
+}

@@ -20,3 +20,5 @@
 启用真实注册前还需：配置本应用可用的真实 SMTP、模板及发送速率；将测试 SMTP 接收器从生产路径移除；确认账号注销、HTTPS、CORS、恢复与邮件投递的真实端到端结果；最后才将服务器 `gateway.json` 的 `publicAuthEnabled` 设为 true，并使用服务器 `secrets/client.env` 中的公开客户端配置重新构建客户端。不要将整个 gateway.json/auth.env 或 service key 复制到前端，也不要用测试 staging key 让手机绕过注册开关。
 
 `bootstrap.sh` 不能在当前部署重跑；运行已有环境用 `docker compose up -d --pull never`，保留现有 secrets 和数据库。备份/恢复、真实 SMTP 和公网移动端联调未完成前，不得宣称已正式上线。
+
+2026-10-24 后续确认：用户曾授权仅复用游戏邮件通道、账号库仍独立。只读检查发现游戏 Supabase Auth 的 SMTP 为示例配置，且无对应邮件服务；没有复制占位凭据或修改游戏。用户随后明确“先不要配置邮件服务器”，故本轮停留在内网测试邮件模式，公网注册保持关闭，等待未来单独恢复邮件接入。HTTPS 的腾讯云拦截也仍需处理。

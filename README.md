@@ -6,6 +6,8 @@
 
 浏览器保留 12 张随包 SVG 示例；真实照片功能需 Android / iOS 原生应用。二者的数据仓库独立，不混合示例和真实照片。
 
+用户已决定本轮暂不配置邮件服务器，公网注册继续关闭。客户端功能、隔离账号验证、Android 与 iOS 构建及测试结果见 [Phase 10 开发与隔离验收报告](docs/PHASE10-ACCEPTANCE.md)。
+
 ## 开发与检查
 
 需要 Node.js 24.19+（24.x）、npm 11。Android 使用 Java 21、Android SDK 36；iOS 使用 macOS/Xcode 与 Swift Package Manager。

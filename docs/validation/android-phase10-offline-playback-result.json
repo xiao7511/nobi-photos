@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-10-24T10:08:54.877Z",
+  "version": "0.10.0",
+  "platform": "Android 14 / API 34 dedicated AVD",
+  "fixturePhotos": 103,
+  "geometry": {
+    "viewport": {
+      "width": 412,
+      "height": 915
+    },
+    "image": {
+      "width": 412,
+      "height": 915.047607421875
+    },
+    "natural": {
+      "width": 512,
+      "height": 929
+    },
+    "fit": "cover",
+    "pixelRatio": 1.3125
+  },
+  "aiAndCategoryAlbumDetails": true,
+  "nativeBackToList": true,
+  "originalPixels": true,
+  "defaultSilent": true,
+  "recording": null,
+  "validationMode": "offline originals and graceful music failure",
+  "nativeOverlap": {
+    "leaseId": "eab1e8cc-e09a-4d45-9cc2-b90d73071531",
+    "thirdRejected": true
+  },
+  "categoryMusic": [],
+  "slideshowAdvanceAndPause": true,
+  "backgroundReleasesOriginal": true,
+  "networkFailurePreservesPhotoAndSlideshow": true,
+  "realOnlineRecordingTested": false,
+  "offlinePhotosThenOptInInternetMusic": false,
+  "privatePhotos": false,
+  "status": "passed"
+}

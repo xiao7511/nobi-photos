@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import process from 'node:process'
@@ -9,6 +9,7 @@ import console from 'node:console'
 import { chromium } from '@playwright/test'
 const run = promisify(execFile),
   serial = 'emulator-5580'
+const offlineOnly = process.env.NOBI_NATIVE_OFFLINE_ONLY === '1'
 const adbPath = join(
   process.env.ANDROID_HOME || join(process.env.LOCALAPPDATA, 'Android', 'Sdk'),
   'platform-tools',
@@ -98,8 +99,8 @@ try {
         audio = list[list.length - 1]
       return {
         count: list.length,
-        paused: audio?.paused,
-        src: audio?.getAttribute('src'),
+        paused: audio?.paused ?? true,
+        src: audio?.getAttribute('src') ?? null,
         time: audio?.currentTime ?? 0,
         duration: audio?.duration ?? 0,
         ready: audio?.readyState,
@@ -199,20 +200,35 @@ try {
     1,
   )
   // Actual internet stream: no route interception, local replacement audio or API service.
-  await adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'disable')
-  await adb('shell', 'svc', 'wifi', 'enable')
-  await setTimeout(1500)
-  await viewer.getByRole('button', { name: '开启分类配乐' }).click()
-  let sound
-  for (let i = 0; i < 100; i++) {
-    sound = await sample()
-    if (sound.time > 0.5 && sound.duration > 30 && !sound.paused) break
-    await setTimeout(200)
+  if (!offlineOnly) {
+    await adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'disable')
+    await adb('shell', 'svc', 'wifi', 'enable')
+    await setTimeout(1500)
   }
-  assert.ok(
-    sound.time > 0.5 && sound.duration > 30 && !sound.paused,
-    'Real artist-hosted MP3 must be decoded and progressing',
-  )
+  await viewer.getByRole('button', { name: '开启分类配乐' }).click()
+  let sound = null
+  if (offlineOnly) {
+    await viewer
+      .locator('.viewer-error')
+      .filter({ hasText: '在线音乐暂不可用' })
+      .waitFor({ timeout: 25000 })
+    assert.equal((await sample()).src, null)
+    assert.equal((await sample()).paused, true)
+    assert.equal(
+      await viewer.locator('img.is-current').getAttribute('alt'),
+      'nobi_ai_reference_parrot.jpg',
+    )
+  } else {
+    for (let i = 0; i < 100; i++) {
+      sound = await sample()
+      if (sound.time > 0.5 && sound.duration > 30 && !sound.paused) break
+      await setTimeout(200)
+    }
+    assert.ok(
+      sound.time > 0.5 && sound.duration > 30 && !sound.paused,
+      'Real artist-hosted MP3 must be decoded and progressing',
+    )
+  }
   const before = await viewer.locator('.viewer-count').innerText()
   await viewer.getByRole('button', { name: '开始自动轮播' }).click()
   await page.waitForFunction(
@@ -240,16 +256,18 @@ try {
     .locator('.viewer-quality')
     .filter({ hasText: /^原图$/ })
     .waitFor()
-  await viewer.getByRole('button', { name: '开启分类配乐' }).click()
-  await viewer.locator('.viewer-music-caption').filter({ hasText: 'Carefree' }).waitFor()
-  await page.waitForFunction(
-    () => {
-      const audio = globalThis.__nobiAudio[globalThis.__nobiAudio.length - 1]
-      return audio && !audio.paused && audio.currentTime > 0.5 && audio.duration > 30
-    },
-    undefined,
-    { timeout: 25000 },
-  )
+  if (!offlineOnly) {
+    await viewer.getByRole('button', { name: '开启分类配乐' }).click()
+    await viewer.locator('.viewer-music-caption').filter({ hasText: 'Carefree' }).waitFor()
+    await page.waitForFunction(
+      () => {
+        const audio = globalThis.__nobiAudio[globalThis.__nobiAudio.length - 1]
+        return audio && !audio.paused && audio.currentTime > 0.5 && audio.duration > 30
+      },
+      undefined,
+      { timeout: 25000 },
+    )
+  }
   await viewer.getByRole('button', { name: '关闭照片详情' }).click()
   assert.equal((await sample()).src, null)
   assert.equal((await sample()).paused, true)
@@ -258,7 +276,7 @@ try {
     JSON.stringify(
       {
         checkedAt: new Date().toISOString(),
-        version: '0.9.0',
+        version: JSON.parse(await readFile('package.json', 'utf8')).version,
         platform: 'Android 14 / API 34 dedicated AVD',
         fixturePhotos: names.length,
         geometry,
@@ -267,12 +285,18 @@ try {
         originalPixels: true,
         defaultSilent: true,
         recording: sound,
+        validationMode: offlineOnly
+          ? 'offline originals and graceful music failure'
+          : 'offline photos plus real online recording',
         nativeOverlap: overlap,
-        categoryMusic: ['Carefree', 'Carefree'],
+        categoryMusic: offlineOnly ? [] : ['Carefree', 'Carefree'],
         slideshowAdvanceAndPause: true,
-        backgroundStopsAudioAndReleasesOriginal: true,
-        closedViewerStopsAudio: true,
-        offlinePhotosThenOptInInternetMusic: true,
+        backgroundReleasesOriginal: true,
+        networkFailurePreservesPhotoAndSlideshow: offlineOnly,
+        realOnlineRecordingTested: !offlineOnly,
+        backgroundStopsAudioAndReleasesOriginal: offlineOnly ? undefined : true,
+        closedViewerStopsAudio: offlineOnly ? undefined : true,
+        offlinePhotosThenOptInInternetMusic: !offlineOnly,
         privatePhotos: false,
         status: 'passed',
       },
@@ -281,7 +305,9 @@ try {
     ),
   )
   console.log(
-    'Native fullscreen, AI/category album details, slideshow, real internet recording and lifecycle cleanup passed',
+    offlineOnly
+      ? 'Native offline originals, AI/category albums, slideshow, graceful music failure and cache cleanup passed'
+      : 'Native fullscreen, AI/category album details, slideshow, real internet recording and lifecycle cleanup passed',
   )
 } finally {
   await browser?.close()
