@@ -11,6 +11,7 @@ import {
   Play,
   Pause,
   Music2,
+  ListMusic,
   VolumeX,
   Expand,
   Shrink,
@@ -21,7 +22,8 @@ import { useLibrary } from '../stores/library'
 import { originalPhoto } from '../services/originalPhoto'
 import TagEditor from './TagEditor.vue'
 import { AlbumMusic } from '../services/albumMusic'
-import { albumMusicTheme, musicScores, type MusicTheme } from '../domain/albumMusic'
+import { useMusicSelection } from '../stores/music'
+import { albumMusicTheme, type MusicTheme } from '../domain/albumMusic'
 const props = defineProps<{
   photos: Photo[]
   initialId: string
@@ -30,6 +32,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ close: [] }>()
 const library = useLibrary()
+const musicSelection = useMusicSelection()
 const id = ref(props.initialId),
   dialog = ref<HTMLDialogElement>(),
   stage = ref<HTMLElement>()
@@ -56,6 +59,7 @@ const music = new AlbumMusic(() => {
   musicError.value = '配乐已暂停，请点击重新开启。'
 })
 const theme = computed(() => props.musicTheme ?? albumMusicTheme('', props.photos))
+const track = computed(() => musicSelection.track(theme.value))
 let slideTimer: ReturnType<typeof setTimeout> | undefined
 let musicRequest = 0,
   ended = false
@@ -113,11 +117,14 @@ async function startMusic() {
   musicOn.value = true
   musicLoading.value = true
   try {
-    await music.play(theme.value)
+    await music.play(track.value)
   } catch {
     if (request === musicRequest && !ended) {
       musicOn.value = false
-      musicError.value = '在线音乐暂不可用，请检查网络后重试；照片轮播可继续使用。'
+      musicError.value =
+        track.value.kind === 'local'
+          ? '本机音频暂不能播放，请重新选择可用格式；照片轮播可继续使用。'
+          : '在线音乐暂不可用，请检查网络后重试；照片轮播可继续使用。'
     }
   } finally {
     if (request === musicRequest) musicLoading.value = false
@@ -371,9 +378,14 @@ watch(
   },
 )
 watch([playing, details, zoom, () => props.photos.length], schedule)
-watch(theme, () => {
-  if (musicOn.value) void startMusic()
-})
+watch(
+  () => track.value.url,
+  () => {
+    musicError.value = ''
+    if (musicOn.value) stopMusic()
+  },
+)
+watch(() => musicSelection.localRequest, close, { flush: 'sync' })
 onMounted(() => {
   resize()
   void load()
@@ -433,6 +445,9 @@ onUnmounted(() => {
           @click="toggleMusic"
         >
           <VolumeX v-if="musicOn" :size="21" /><Music2 v-else :size="21" />
+        </button>
+        <button class="viewer-button" aria-label="选择背景音乐" @click="musicSelection.open = true">
+          <ListMusic :size="21" />
         </button>
         <button
           class="viewer-button"
@@ -519,35 +534,40 @@ onUnmounted(() => {
         </button>
       </footer>
       <p v-if="musicOn && controls" class="viewer-music-caption" role="status">
-        {{ musicLoading ? '正在连接… ' : '' }}{{ musicScores[theme].title }} · Kevin MacLeod · CC BY
-        4.0
+        {{ musicLoading ? '正在准备… ' : '' }}{{ track.title }} · {{ track.artist
+        }}<template v-if="track.kind === 'online'"> · CC BY 4.0</template>
         <button class="music-info-button" @click="musicDetails = !musicDetails">曲目来源</button>
       </p>
       <section v-if="musicDetails" class="viewer-details" aria-label="配乐来源与授权">
         <div class="viewer-details-title">
-          <h2>在线分类配乐</h2>
+          <h2>{{ track.kind === 'local' ? '本机配乐' : '在线配乐' }}</h2>
           <button class="icon-button" aria-label="收起配乐信息" @click="musicDetails = false">
             <X :size="20" />
           </button>
         </div>
-        <p>{{ musicScores[theme].mood }}</p>
-        <p>
-          '{{ musicScores[theme].title }}' — Kevin MacLeod (incompetech.com) — Licensed under
-          Creative Commons: By Attribution 4.0.
-        </p>
-        <p>
-          原版录音，未作改编。默认关闭；仅播放时请求音乐，可能使用移动流量。音乐提供方可收到 IP
-          与设备请求信息，照片、文件名与相册标题不发送。
-        </p>
-        <p>
-          <a :href="musicScores[theme].page" target="_blank" rel="noopener noreferrer"
-            >incompetech.com · 原曲页面</a
-          >
-          ·
-          <a :href="musicScores[theme].licenseUrl" target="_blank" rel="noopener noreferrer"
-            >CC BY 4.0 许可</a
-          >
-        </p>
+        <template v-if="track.kind === 'online'">
+          <p>
+            '{{ track.title }}' — {{ track.artist }} (incompetech.com) — Licensed under Creative
+            Commons: By Attribution 4.0.
+          </p>
+          <p>
+            原版录音，未作改编。默认关闭；仅播放时请求音乐，可能使用移动流量。音乐提供方可收到 IP
+            与设备请求信息，照片、文件名与相册标题不发送。
+          </p>
+          <p>
+            <a :href="track.page" target="_blank" rel="noopener noreferrer"
+              >incompetech.com · 原曲页面</a
+            >
+            ·
+            <a :href="track.licenseUrl" target="_blank" rel="noopener noreferrer">CC BY 4.0 许可</a>
+          </p>
+        </template>
+        <template v-else
+          ><p>{{ track.title }}</p>
+          <p>
+            由你通过系统选择的本机音频，仅在设备内播放。不会上传、不写入相册数据库；关闭应用后需重新选择。
+          </p></template
+        >
       </section>
       <div v-if="musicError" class="viewer-error" role="alert">{{ musicError }}</div>
       <div v-if="error" class="viewer-error" role="alert">

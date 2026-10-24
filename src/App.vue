@@ -17,6 +17,7 @@ import {
   PanelLeftClose,
   ArrowLeft,
 } from '@lucide/vue'
+import MusicPicker from './components/MusicPicker.vue'
 import { useLibrary } from './stores/library'
 import { usePreferences } from './stores/preferences'
 import { useDeviceLibrary } from './stores/deviceLibrary'
@@ -161,7 +162,7 @@ onUnmounted(() => {
         <RouterLink to="/privacy">了解隐私保护 <ArrowUpRight :size="14" /></RouterLink>
       </div>
       <div class="sidebar-footer">
-        <span><i class="status-dot"></i> 本地模式</span><span>PHASE 08</span>
+        <span><i class="status-dot"></i> 本地模式</span><span>PHASE 09</span>
       </div>
     </div>
   </aside>
@@ -236,6 +237,7 @@ onUnmounted(() => {
       <component :is="item.icon" :size="21" /><span>{{ item.name }}</span>
     </RouterLink>
   </nav>
+  <MusicPicker />
   <div v-if="library.notice" class="toast" role="status">
     <Sparkles :size="17" /><span>{{ library.notice }}</span
     ><button class="icon-button" aria-label="关闭通知" @click="library.notice = ''">

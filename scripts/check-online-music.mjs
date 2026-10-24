@@ -50,7 +50,7 @@ try {
     await page.getByRole('button', { name: new RegExp(`${category}.*张照片`) }).click()
     const play = page.getByRole('button', { name: '播放相册' })
     if (await play.isEnabled()) await play.click()
-    else await page.locator('.photo-open').first().click()
+    else await page.locator('.fan-photo.is-active').click()
     const viewer = page.getByRole('dialog', { name: '照片详情' })
     await viewer
       .locator('.viewer-quality')

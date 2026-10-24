@@ -1,8 +1,8 @@
 {
   "name": "nobi-photos",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
-  "description": "NOBI Photos: smooth album carousel and licensed online category music, Phase 8",
+  "description": "NOBI Photos: fan albums and selectable online/local music, Phase 9",
   "scripts": {
     "dev": "vite",
     "lint": "eslint . --max-warnings 0",
@@ -18,7 +18,8 @@
     "android:debug": "cd android && gradlew.bat assembleDebug",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "art:generate": "node scripts/generate-demo.mjs"
+    "art:generate": "node scripts/generate-demo.mjs",
+    "test:native-music": "node scripts/native-music-picker-smoke.mjs"
   },
   "keywords": [],
   "author": "",

@@ -23,6 +23,7 @@ test('albums and manual tags persist, search offline, and album removal leaves p
   await expect(page.locator('.user-album')).toContainText('周末小记')
   await page.locator('.user-album').click()
   await expect(page.locator('.photo-card')).toHaveCount(2)
+  await page.getByRole('button', { name: '网格查看' }).click()
   await page.getByRole('button', { name: '查看山野之间', exact: true }).click()
   const detail = page.getByRole('dialog', { name: '照片详情' })
   await detail.getByRole('button', { name: '编辑标签', exact: true }).click()

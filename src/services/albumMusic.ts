@@ -1,18 +1,21 @@
-import { musicScores, type MusicTheme } from '../domain/albumMusic'
+import { musicScores, type MusicTheme, type MusicTrack } from '../domain/albumMusic'
+import { validMusic } from './localMusic'
 
 // Only a user gesture starts a request. No album/photo data enters the fixed media URL.
 export class AlbumMusic {
   constructor(private interrupted: () => void = () => {}) {}
   private audio?: HTMLAudioElement
   private cancel?: () => void
-  async play(theme: MusicTheme) {
+  async play(selection: MusicTheme | MusicTrack) {
     this.stop()
+    const track = typeof selection === 'string' ? musicScores[selection] : selection
+    if (!validMusic(track)) throw new Error('无效的音乐来源')
     const audio = new Audio()
     this.audio = audio
     audio.preload = 'none'
     audio.loop = true
     audio.volume = 0.55
-    audio.src = musicScores[theme].url
+    audio.src = track.url
     try {
       await new Promise<void>((resolve, reject) => {
         let settled = false

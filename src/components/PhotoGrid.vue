@@ -13,8 +13,15 @@ const props = withDefaults(
     selecting?: boolean
     selectedIds?: string[]
     musicTheme?: MusicTheme
+    galleryHidden?: boolean
   }>(),
-  { compact: false, selecting: false, selectedIds: () => [], musicTheme: undefined },
+  {
+    compact: false,
+    selecting: false,
+    selectedIds: () => [],
+    musicTheme: undefined,
+    galleryHidden: false,
+  },
 )
 const emit = defineEmits<{ toggle: [id: string] }>()
 const library = useLibrary()
@@ -33,14 +40,20 @@ function play() {
   autoplay.value = true
   selected.value = first.id
 }
-defineExpose({ play })
+function openPhoto(id: string) {
+  if (!props.photos.some((photo) => photo.id === id)) return
+  opener = document.activeElement as HTMLElement
+  autoplay.value = false
+  selected.value = id
+}
+defineExpose({ play, openPhoto })
 function close() {
   selected.value = ''
   opener?.focus()
 }
 </script>
 <template>
-  <div v-if="photos.length" :class="['photo-grid', { compact }]">
+  <div v-if="photos.length" v-show="!galleryHidden" :class="['photo-grid', { compact }]">
     <article v-for="photo in photos" :key="photo.id" class="photo-card">
       <button
         class="photo-open"

@@ -90,6 +90,10 @@ final class NobiUITests: XCTestCase {
         for _ in 0..<6 { if category.isHittable { break }; app.swipeUp() }
         category.tap()
         XCTAssertTrue(app.webViews.buttons["返回相册列表"].firstMatch.waitForExistence(timeout: 15))
+        app.webViews.buttons["选择背景音乐"].firstMatch.tap()
+        XCTAssertTrue(text("在线曲目列表").waitForExistence(timeout: 10))
+        app.webViews.switches["选用 Long Stroll"].firstMatch.tap()
+        app.webViews.buttons["完成选择"].firstMatch.tap()
         app.webViews.buttons["播放相册"].firstMatch.tap()
         XCTAssertTrue(app.webViews.staticTexts["原图"].firstMatch.waitForExistence(timeout: 30))
         let counter = app.webViews.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+ / [0-9]+")).firstMatch
@@ -98,7 +102,7 @@ final class NobiUITests: XCTestCase {
         let music = app.webViews.switches["开启分类配乐"].firstMatch
         XCTAssertTrue(music.waitForExistence(timeout: 10))
         music.tap()
-        XCTAssertTrue(text("Carefree").waitForExistence(timeout: 15))
+        XCTAssertTrue(text("Long Stroll").waitForExistence(timeout: 15))
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label != %@", firstCounter), object: counter)], timeout: 20) == .completed)
         XCTAssertTrue(app.webViews.switches["关闭背景音乐"].firstMatch.exists)
         app.webViews.switches["暂停轮播"].firstMatch.tap()

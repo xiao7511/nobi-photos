@@ -1,16 +1,41 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowUpRight, ArrowLeft, FolderHeart, Plus, Pencil, Trash2, Play } from '@lucide/vue'
+import {
+  ArrowUpRight,
+  ArrowLeft,
+  FolderHeart,
+  Plus,
+  Pencil,
+  Trash2,
+  Play,
+  Music2,
+  GalleryHorizontal,
+  LayoutGrid,
+} from '@lucide/vue'
 import { useLibrary } from '../stores/library'
 import PhotoGrid from '../components/PhotoGrid.vue'
-import PhotoThumbnail from '../components/PhotoThumbnail.vue'
-import type { Category } from '../domain/models'
+import AlbumCover from '../components/AlbumCover.vue'
+import AlbumFan from '../components/AlbumFan.vue'
+import { useMusicSelection } from '../stores/music'
+import type { Category, Photo } from '../domain/models'
 import AlbumEditor from '../components/AlbumEditor.vue'
 import AlbumRename from '../components/AlbumRename.vue'
 import SmartOrganization from '../components/SmartOrganization.vue'
 import { albumMusicTheme, musicScores } from '../domain/albumMusic'
 const library = useLibrary()
+const musicSelection = useMusicSelection()
+const layout = ref<'fan' | 'grid'>('fan')
+const photoIndex = computed(() => new Map(library.photos.map((photo) => [photo.id, photo])))
+function coverPhotos(ids: string[]) {
+  const result: Photo[] = []
+  for (const id of ids) {
+    const photo = photoIndex.value.get(id)
+    if (photo) result.push(photo)
+    if (result.length === 5) break
+  }
+  return result
+}
 const route = useRoute(),
   router = useRouter()
 const selectedId = computed(() => (typeof route.query.album === 'string' ? route.query.album : ''))
@@ -49,6 +74,7 @@ watch(selectedId, async (id) => {
   if (id) {
     await nextTick()
     heading.value?.focus()
+    layout.value = 'fan'
   }
 })
 function chooseUser(id: string) {
@@ -115,7 +141,36 @@ const albums = computed(() =>
         轮播时可联网播放「{{ musicScores[theme].title }}」· Kevin MacLeod（CC BY
         4.0），按分类匹配，默认关闭。
       </p>
-      <PhotoGrid ref="grid" :photos="visible" :music-theme="theme" />
+      <div class="album-browse-actions">
+        <div class="album-view-toggle" aria-label="相册浏览方式">
+          <button
+            class="button"
+            :aria-pressed="layout === 'fan'"
+            aria-label="扇形查看"
+            @click="layout = 'fan'"
+          >
+            <GalleryHorizontal :size="17" /> 扇形
+          </button>
+          <button
+            class="button"
+            :aria-pressed="layout === 'grid'"
+            aria-label="网格查看"
+            @click="layout = 'grid'"
+          >
+            <LayoutGrid :size="17" /> 网格
+          </button>
+        </div>
+        <button class="button" @click="musicSelection.open = true">
+          <Music2 :size="17" /> 选择背景音乐
+        </button>
+      </div>
+      <AlbumFan v-if="layout === 'fan'" :photos="visible" @open="grid?.openPhoto($event)" />
+      <PhotoGrid
+        ref="grid"
+        :photos="visible"
+        :music-theme="theme"
+        :gallery-hidden="layout === 'fan'"
+      />
     </template>
     <p v-if="!library.loading && !userAlbum && !validCategory" class="banner" role="status">
       相册已移除或暂不可访问，请返回列表重新选择。
@@ -154,13 +209,10 @@ const albums = computed(() =>
           v-for="album in library.albums"
           :key="album.id"
           class="album-card user-album"
+          :aria-label="`${album.name}，${album.photoIds.length} 张照片`"
           @click="chooseUser(album.id)"
         >
-          <PhotoThumbnail
-            v-if="library.photos.find((p) => album.photoIds.includes(p.id))"
-            :photo="library.photos.find((p) => album.photoIds.includes(p.id))!"
-          />
-          <div v-else class="album-placeholder"></div>
+          <AlbumCover :photos="coverPhotos(album.photoIds)" />
           <div>
             <span
               ><strong>{{ album.name }}</strong
@@ -183,10 +235,10 @@ const albums = computed(() =>
         v-for="album in albums"
         :key="album.name"
         class="album-card"
+        :aria-label="`${album.name}，${album.photos.length} 张照片`"
         @click="chooseCategory(album.name)"
       >
-        <PhotoThumbnail v-if="album.photos[0]" :photo="album.photos[0]" />
-        <div v-else class="album-placeholder"></div>
+        <AlbumCover :photos="album.photos" />
         <div>
           <span
             ><strong>{{ album.name }}</strong

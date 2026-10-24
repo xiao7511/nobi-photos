@@ -16,6 +16,7 @@ test('photo fills the viewer with optional tags, album navigation and persistent
   await rename.getByRole('textbox', { name: '相册名称' }).fill('我的 AI 回忆')
   await rename.getByRole('button', { name: '保存名称' }).click()
   await expect(page.getByRole('heading', { name: '我的 AI 回忆', exact: true })).toBeInViewport()
+  await page.getByRole('button', { name: '网格查看' }).click()
   await page.locator('.photo-open').first().click()
   const viewer = page.getByRole('dialog', { name: '照片详情' })
   await expect(viewer.getByRole('textbox')).toHaveCount(0)

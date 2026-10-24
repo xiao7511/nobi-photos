@@ -18,7 +18,10 @@ assert.match(manifest, /android:allowBackup="false"/)
 assert.match(manifest, /android.permission.INTERNET"\s*\/>/)
 assert.match(manifest, /android:usesCleartextTraffic="false"/)
 const html = readFileSync(new URL('../dist/index.html', import.meta.url), 'utf8')
-assert.match(html, /media-src https:\/\/incompetech\.com\/music\/royalty-free\/mp3-royaltyfree\//)
+assert.match(
+  html,
+  /media-src blob: https:\/\/incompetech\.com\/music\/royalty-free\/mp3-royaltyfree\//,
+)
 assert.match(html, /img-src 'self' data: blob:/)
 assert.match(html, /connect-src 'self' ws:\/\/localhost:\* ws:\/\/127\.0\.0\.1:\*;/)
 assert.match(html, /name="referrer" content="no-referrer"/)

@@ -1,7 +1,9 @@
 import type { Photo } from './models'
 // Original recordings from the composer's official CC BY 4.0 library, unmodified.
 const base = 'https://incompetech.com/music/royalty-free/'
-const recording = (title: string, isrc: string) => ({
+const recording = (id: string, title: string, isrc: string) => ({
+  id,
+  kind: 'online' as const,
   title,
   url: `${base}mp3-royaltyfree/${encodeURIComponent(title)}.mp3`,
   page: `${base}index.html?isrc=${isrc}&Search=Search`,
@@ -9,10 +11,20 @@ const recording = (title: string, isrc: string) => ({
   license: 'CC BY 4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
 })
-const dream = recording('Dream Culture', 'USUAN1300046')
-const riley = recording('Life of Riley', 'USUAN1400054')
-const carefree = recording('Carefree', 'USUAN1400037')
-const stroll = recording('Long Stroll', 'USUAN1100174')
+const dream = recording('dream', 'Dream Culture', 'USUAN1300046')
+const riley = recording('riley', 'Life of Riley', 'USUAN1400054')
+const carefree = recording('carefree', 'Carefree', 'USUAN1400037')
+const stroll = recording('stroll', 'Long Stroll', 'USUAN1100174')
+export const musicCatalog = [dream, riley, carefree, stroll] as const
+export type OnlineMusicTrack = (typeof musicCatalog)[number]
+export interface LocalMusicTrack {
+  id: 'local'
+  kind: 'local'
+  title: string
+  url: string
+  artist: '本机音频'
+}
+export type MusicTrack = OnlineMusicTrack | LocalMusicTrack
 export const musicScores = {
   nature: { ...dream, mood: '自然 · 梦幻钢琴' },
   travel: { ...riley, mood: '旅行 · 轻快吉他' },

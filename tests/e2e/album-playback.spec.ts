@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { testWave } from './helpers/audio'
 
 test('category albums open at the top, survive reload, and slideshow loops and pauses', async ({
   page,
@@ -43,26 +44,6 @@ test('category albums open at the top, survive reload, and slideshow loops and p
 
 // A short deterministic media response tests the browser decoder and network boundary.
 // The separate scripts/check-online-music.mjs validates the actual artist-hosted recording.
-function testWave() {
-  const rate = 8000,
-    samples = rate * 10,
-    wave = Buffer.alloc(44 + samples * 2)
-  wave.write('RIFF')
-  wave.writeUInt32LE(wave.length - 8, 4)
-  wave.write('WAVEfmt ', 8)
-  wave.writeUInt32LE(16, 16)
-  wave.writeUInt16LE(1, 20)
-  wave.writeUInt16LE(1, 22)
-  wave.writeUInt32LE(rate, 24)
-  wave.writeUInt32LE(rate * 2, 28)
-  wave.writeUInt16LE(2, 32)
-  wave.writeUInt16LE(16, 34)
-  wave.write('data', 36)
-  wave.writeUInt32LE(samples * 2, 40)
-  for (let i = 0; i < samples; i++)
-    wave.writeInt16LE(Math.round(Math.sin((i * Math.PI * 440) / rate) * 3000), 44 + i * 2)
-  return wave
-}
 test('online category music is opt-in, attributed and cancelled; offline photos remain usable', async ({
   page,
   context,
@@ -143,6 +124,7 @@ test('online category music is opt-in, attributed and cancelled; offline photos 
 test('carousel keeps decoded photos mounted and covers every animation frame', async ({ page }) => {
   await page.goto('/#/albums')
   await page.getByRole('button', { name: /自然.*张照片/ }).click()
+  await page.getByRole('button', { name: '网格查看' }).click()
   await page.locator('.photo-open').first().click()
   const viewer = page.getByRole('dialog', { name: '照片详情' })
   await expect(viewer.locator('.viewer-quality')).toHaveText('示例插画')

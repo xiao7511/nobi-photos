@@ -120,6 +120,7 @@ try {
   await adb('shell', 'input', 'keyevent', '4')
   await page.locator('.album-card').first().waitFor()
   await page.getByRole('button', { name: /未分类.*张照片/ }).click()
+  await page.getByRole('button', { name: '网格查看' }).click()
   await page.getByRole('button', { name: '查看nobi_ai_reference_parrot.jpg', exact: true }).click()
   const viewer = page.getByRole('dialog', { name: '照片详情' })
   await viewer
@@ -233,6 +234,7 @@ try {
   await page.waitForFunction(() => !globalThis.document.querySelector('.photo-viewer'))
   await page.getByRole('button', { name: '返回相册列表' }).click()
   await ai.click()
+  await page.getByRole('button', { name: '网格查看' }).click()
   await page.getByRole('button', { name: '查看nobi_ai_reference_parrot.jpg', exact: true }).click()
   await viewer
     .locator('.viewer-quality')
@@ -256,7 +258,7 @@ try {
     JSON.stringify(
       {
         checkedAt: new Date().toISOString(),
-        version: '0.8.0',
+        version: '0.9.0',
         platform: 'Android 14 / API 34 dedicated AVD',
         fixturePhotos: names.length,
         geometry,

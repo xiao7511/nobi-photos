@@ -1,6 +1,6 @@
 # iOS 开发、构建与验证
 
-版本 0.8.0 / build 9，bundle ID `app.nobi.photos`。iOS 原生工程使用 Capacitor 8、Swift Package Manager、本地 PhotoKit / SQLite 与 Apple Vision，无需注册或云端业务 API。
+版本 0.9.0 / build 10，bundle ID `app.nobi.photos`。iOS 原生工程使用 Capacitor 8、Swift Package Manager、本地 PhotoKit / SQLite 与 Apple Vision，无需注册或云端业务 API。
 
 ## 当前交付
 
@@ -53,3 +53,5 @@ xcodebuild -project ios/App/App.xcodeproj -scheme Nobi -configuration Debug -des
 模拟器验证不能覆盖真机性能、能耗、真实相机图库规模、有限照片授权缩减或所有 iOS 版本。签名前还应补齐这些验收，并按实际发布功能填写 App Store 隐私信息。
 
 0.8.0 的照片仍离线处理；仅在主动开启分类配乐后播放官方 HTTPS 录音。原图轮播最多同时保留两个受保护、排除备份的临时文件，滑动结束后释放上一张。
+
+0.9.0 增加扇形相册、可选在线曲目和系统文件选择器的本机音频入口。本机音频为当前会话选择，不读取 Apple Music 的受保护曲库。原生 UI 回归增加从列表选择曲目后播放的验证。
