@@ -1,0 +1,41 @@
+{
+  "checkedAt": "2026-10-24T04:37:54.205Z",
+  "recordings": [
+    {
+      "category": "自然",
+      "url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Dream%20Culture.mp3",
+      "time": 0.516052,
+      "duration": 214.285714,
+      "ready": 4,
+      "releasedOnClose": true
+    },
+    {
+      "category": "旅行",
+      "url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Life%20of%20Riley.mp3",
+      "time": 0.517245,
+      "duration": 235.294127,
+      "ready": 4,
+      "releasedOnClose": true
+    },
+    {
+      "category": "生活",
+      "url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Carefree.mp3",
+      "time": 0.510848,
+      "duration": 205.078639,
+      "ready": 4,
+      "releasedOnClose": true
+    },
+    {
+      "category": "建筑",
+      "url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Long%20Stroll.mp3",
+      "time": 0.515157,
+      "duration": 254.72,
+      "ready": 4,
+      "releasedOnClose": true
+    }
+  ],
+  "requestCount": 4,
+  "onlyFixedMusicGetRequests": true,
+  "privatePhotos": false,
+  "status": "passed"
+}

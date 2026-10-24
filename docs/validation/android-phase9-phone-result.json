@@ -1,0 +1,93 @@
+{
+  "checkedAt": "2026-10-24T04:37:40.555Z",
+  "model": "ZTE 7551N",
+  "android": "13",
+  "api": 33,
+  "routes": [
+    {
+      "path": "/",
+      "width": 360,
+      "height": 769,
+      "documentWidth": 360,
+      "nativeShell": true,
+      "headerHeight": 60,
+      "navigationVisible": true,
+      "navigationBottom": 769,
+      "localOrigin": true,
+      "nativeSqlite": true,
+      "nativePhotoLibrary": true
+    },
+    {
+      "path": "/albums",
+      "width": 360,
+      "height": 769,
+      "documentWidth": 360,
+      "nativeShell": true,
+      "headerHeight": 60,
+      "navigationVisible": true,
+      "navigationBottom": 769,
+      "localOrigin": true,
+      "nativeSqlite": true,
+      "nativePhotoLibrary": true
+    },
+    {
+      "path": "/search",
+      "width": 360,
+      "height": 769,
+      "documentWidth": 360,
+      "nativeShell": true,
+      "headerHeight": 60,
+      "navigationVisible": true,
+      "navigationBottom": 769,
+      "localOrigin": true,
+      "nativeSqlite": true,
+      "nativePhotoLibrary": true
+    },
+    {
+      "path": "/cleanup",
+      "width": 360,
+      "height": 769,
+      "documentWidth": 360,
+      "nativeShell": true,
+      "headerHeight": 60,
+      "navigationVisible": true,
+      "navigationBottom": 769,
+      "localOrigin": true,
+      "nativeSqlite": true,
+      "nativePhotoLibrary": true
+    },
+    {
+      "path": "/profile",
+      "width": 360,
+      "height": 769,
+      "documentWidth": 360,
+      "nativeShell": true,
+      "headerHeight": 60,
+      "navigationVisible": true,
+      "navigationBottom": 769,
+      "localOrigin": true,
+      "nativeSqlite": true,
+      "nativePhotoLibrary": true
+    }
+  ],
+  "hardwareBack": true,
+  "modalBack": true,
+  "keyboardResizes": true,
+  "themeSwitching": true,
+  "coldStart": false,
+  "rootBackMinimizes": true,
+  "resumeRestoresApp": true,
+  "runtime": {
+    "appId": "app.nobi.photos",
+    "version": "0.9.0",
+    "build": "10",
+    "sqliteVersion": 2,
+    "localOrigin": true
+  },
+  "privatePhotoCapture": false,
+  "destructiveActions": false,
+  "status": "passed",
+  "localMetadataUnchanged": true,
+  "updatePreservedMetadata": true,
+  "baselineValuesPublished": false
+}

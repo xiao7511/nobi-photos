@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-24T04:29:16.015Z",
+  "version": "0.9.0",
+  "platform": "Android 14 / API 34 dedicated AVD",
+  "fixturePhotos": 103,
+  "generatedAudioSha256": "a669cfbcfc3e91529ef352a0c7616cca61082070ecb8e3bc253147b8bebff452",
+  "nativeSystemPicker": true,
+  "cancelledPickerKeepsPanel": true,
+  "viewerClosedBeforePicker": true,
+  "localFileSelected": true,
+  "offlinePlayback": {
+    "blobSource": true,
+    "time": 0.210053,
+    "duration": 10,
+    "ready": 4
+  },
+  "noExternalRequests": true,
+  "backgroundStopsAudioAndClearsOriginals": true,
+  "removedAudioRevokesURL": true,
+  "privatePhotos": false,
+  "privateMusic": false,
+  "status": "passed"
+}
