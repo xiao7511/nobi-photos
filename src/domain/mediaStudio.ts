@@ -30,6 +30,19 @@ export function cropRect(width: number, height: number, crop: Crop) {
     h = w / ratio
   return { x: (width - w) / 2, y: (height - h) / 2, width: w, height: h }
 }
+export function compositionCells(count: number, size = 2160, gap = 20) {
+  if (!Number.isInteger(count) || count < 1 || count > 9) throw new Error('拼图需选择 1–9 张照片')
+  const columns = Math.ceil(Math.sqrt(count)),
+    rows = Math.ceil(count / columns)
+  const height = (size - (rows + 1) * gap) / rows
+  return Array.from({ length: count }, (_, index) => {
+    const row = Math.floor(index / columns),
+      column = index % columns
+    const rowCount = Math.min(columns, count - row * columns)
+    const width = (size - (rowCount + 1) * gap) / rowCount
+    return { x: gap + column * (width + gap), y: gap + row * (height + gap), width, height }
+  })
+}
 export function mediaCaption(category: string, style: 'simple' | 'warm' | 'travel') {
   // No filenames, places, dates or AI requests; the user can edit this offline draft.
   if (style === 'travel') return '把沿途的风景，收藏进今天。'

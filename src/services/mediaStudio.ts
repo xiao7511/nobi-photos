@@ -1,5 +1,5 @@
 import type { Photo } from '../domain/models'
-import { cropRect, editPixels, type Crop, type Look } from '../domain/mediaStudio'
+import { compositionCells, cropRect, editPixels, type Crop, type Look } from '../domain/mediaStudio'
 import { originalPhoto } from './originalPhoto'
 
 async function decoded(source: string, signal: AbortSignal): Promise<HTMLImageElement> {
@@ -71,6 +71,7 @@ export async function renderMedia(
       context.fillStyle = '#f6f7f2'
       context.fillRect(0, 0, canvas.width, canvas.height)
     }
+    const cells = options.collage ? compositionCells(photos.length) : []
     for (let i = 0; i < photos.length; i++) {
       signal.throwIfAborted()
       const lease = await originalPhoto(photos[i]!, signal)
@@ -89,12 +90,8 @@ export async function renderMedia(
           canvas.height = Math.max(1, Math.round(rect.height * scale))
           paint(image, 0, 0, canvas.width, canvas.height)
         } else {
-          const columns = Math.ceil(Math.sqrt(photos.length)),
-            gap = 20
-          const size = (canvas.width - (columns + 1) * gap) / columns
-          const x = gap + (i % columns) * (size + gap),
-            y = gap + Math.floor(i / columns) * (size + gap)
-          paint(image, x, y, size, size)
+          const cell = cells[i]!
+          paint(image, cell.x, cell.y, cell.width, cell.height)
         }
       } finally {
         if (image) image.src = ''
