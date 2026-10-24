@@ -44,6 +44,7 @@ onUnmounted(() => {
     class="music-picker"
     aria-labelledby="music-picker-title"
     @cancel.self.prevent="music.open = false"
+    @close="music.open = false"
   >
     <header class="music-picker-heading">
       <div>
@@ -106,14 +107,19 @@ onUnmounted(() => {
       在线曲目播放时使用网络，来源与授权可在照片播放器中查看；选曲不会启动下载。
     </p>
     <button class="button primary music-picker-done" @click="music.open = false">完成选择</button>
-    <input
-      ref="input"
-      class="music-file-input"
-      tabindex="-1"
-      type="file"
-      accept="audio/*"
-      aria-label="选择本机音频文件"
-      @change="chosen"
-    />
+    <!-- Keep the file input outside dialog's DOM ancestry: trusted Android input
+         cancel events can invoke the ancestor dialog's native default close action. -->
+    <Teleport to="body">
+      <input
+        ref="input"
+        class="music-file-input"
+        tabindex="-1"
+        aria-hidden="true"
+        type="file"
+        accept="audio/*"
+        aria-label="选择本机音频文件"
+        @change="chosen"
+      />
+    </Teleport>
   </dialog>
 </template>

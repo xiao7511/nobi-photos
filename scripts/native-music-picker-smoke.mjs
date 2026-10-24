@@ -83,6 +83,7 @@ async function tap(nodes, predicate) {
 }
 try {
   await adb('shell', 'am', 'force-stop', 'app.nobi.photos')
+  await adb('shell', 'am', 'force-stop', 'com.android.documentsui')
   await adb('shell', 'am', 'start', '-n', 'app.nobi.photos/.MainActivity')
   for (let i = 0; i < 40; i++) {
     try {
@@ -147,9 +148,20 @@ try {
   await setTimeout(1000)
   assert.ok((await captureUI()).some((n) => n.package === 'com.android.documentsui'))
   await adb('shell', 'input', 'keyevent', '4')
+  let foreground = false
+  for (let i = 0; i < 10; i++) {
+    const windows = await adb('shell', 'dumpsys', 'window')
+    if (/mCurrentFocus=.*app\.nobi\.photos/.test(windows)) {
+      foreground = true
+      break
+    }
+    await setTimeout(400)
+  }
+  assert.ok(foreground, 'Cancelling the native picker must return to the app window')
   await page.waitForFunction(
     async () => (await globalThis.Capacitor.Plugins.App.getState()).isActive,
   )
+  await setTimeout(300)
   await picker.waitFor()
   assert.equal(await viewer.count(), 0)
   assert.equal(await picker.locator('.music-local-selection').count(), 0)
