@@ -1,0 +1,55 @@
+name: nobi-photos-accounts
+services:
+  auth:
+    image: supabase/gotrue:v2.196.0@sha256:c0c25187a6b835e65a6f6e6c6b39d090e832d40e6de5186f2c038e0411944232
+    container_name: nobi-photos-accounts-auth
+    restart: unless-stopped
+    env_file: ./secrets/auth.env
+    mem_limit: 160m
+    cpus: 0.30
+    pids_limit: 80
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp:size=8m]
+    networks: [accounts, database]
+    logging: { driver: json-file, options: { max-size: '2m', max-file: '2' } }
+  gateway:
+    # Offline fallback: use only Node from the cached official image; Studio never starts.
+    image: supabase/studio:2026.09.07-sha-7996410@sha256:94a2a9d2906e8b4109e55159a62e241c3044709a492913ea8edd34b14973d288
+    container_name: nobi-photos-accounts-gateway
+    restart: unless-stopped
+    user: '1000:1000'
+    entrypoint: [node]
+    command: [/app/gateway.mjs]
+    environment: { NODE_OPTIONS: '', NEXT_TELEMETRY_DISABLED: '1' }
+    mem_limit: 96m
+    cpus: 0.20
+    pids_limit: 40
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ./gateway.mjs:/app/gateway.mjs:ro
+      - ./secrets/gateway.json:/run/nobi/gateway.json:ro
+    ports: ['127.0.0.1:15433:3000']
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    networks: [accounts]
+    logging: { driver: json-file, options: { max-size: '2m', max-file: '2' } }
+networks:
+  accounts:
+    driver: bridge
+  database:
+    external: true
+    name: nobi-photos-cloud_database

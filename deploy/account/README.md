@@ -1,8 +1,8 @@
 # 可选账号服务与免费注册权益
 
-本目录是 **尚未部署** 的账号接入配置，不能直接在既有生产库执行。Phase 5 的 `/opt/nobi-photos-cloud` 只有独立 PostgreSQL，没有 Auth、PostgREST 或 Edge Functions，不能把数据库地址填入客户端。本次未连接或修改服务器。
+本目录包含可选账号接入方案，不能直接在既有生产库执行。Phase 5 的 `/opt/nobi-photos-cloud` 原先只有独立 PostgreSQL，不能把数据库地址填入客户端。本次经用户明确批准，已在该应用独立库增加 Supabase Auth 和受限业务网关，真实注册/内部验证邮件/密码恢复/权益/注销已隔离验证；**公网注册仍关闭**，尚未接入真实 SMTP，域名公网访问又被腾讯云/DNSPod 拦截，HTTPS 未签发。实际部署及恢复步骤见 [selfhost](selfhost/README.md)。
 
-需要此应用专用、可经 HTTPS 访问的完整 Supabase **测试项目**（托管或完整自托管均可）。不要复用其他 NOBI 项目。客户端只需要项目 URL 和 publishable/anon 公钥；不能放入数据库密码、service_role、secret key 或微信 AppSecret。
+以下步骤用于完整 Supabase 测试项目（托管或完整自托管）的替代接入。当前上海方案只使用官方 Supabase Auth + 本应用受限网关，不提供通用 PostgREST、Storage 或 Edge Runtime；权益和注销使用同路径兼容接口，不能再叠加本节 SQL/Edge Function。不要复用其他 NOBI 项目。客户端只需要项目 URL 和 publishable/anon 公钥；不能放入数据库密码、service_role、secret key 或微信 AppSecret。
 
 1. 在测试项目启用邮箱/密码认证与 **Confirm email**；密码最少 10 位，配置受控 SMTP、邮件速率限制和应用可接受的滥用防护。不可在未验证邮件发送能力、速率限制和账号注销前开放公网注册。
 2. 将 Confirm signup 和 Reset password 两种邮件模板配置为显示 `{{ .Token }}` 数字验证码，支持 6–10 位。本应用显式输入验证码，不消费 URL token、深链或自动登录，不用一个假的本地账号代替真实注册。邮件应清楚说明 NOBI Photos、有效期和非本人操作的处理方式。

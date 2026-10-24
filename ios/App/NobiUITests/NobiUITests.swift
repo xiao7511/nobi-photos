@@ -31,16 +31,21 @@ final class NobiUITests: XCTestCase {
     private func text(_ value: String) -> XCUIElement {
         app.webViews.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", value)).firstMatch
     }
+    private func control(_ label: String) -> XCUIElement {
+        // Hosted WebKit can change an HTML control's AX type during a loading refresh.
+        // Keep the exact label and real enabled/hittable checks, independent of Button/Switch caching.
+        app.webViews.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
     func testNativeLibraryAndOnDeviceAI() throws {
         let count = app.webViews.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]{2,} 张本机照片")).firstMatch
-        let scan = app.webViews.buttons["立即扫描"].firstMatch
+        let scan = control("立即扫描")
         if scan.waitForExistence(timeout: 10) {
             scan.tap()
         } else {
             // XCTest may reinstall the target after simctl's grant; use the real consent flow.
-            let connect = app.webViews.buttons["连接并读取照片"].firstMatch
+            let connect = control("连接并读取照片")
             XCTAssertTrue(connect.waitForExistence(timeout: 20))
-            let consent = app.webViews.buttons["继续系统授权"].firstMatch
+            let consent = control("继续系统授权")
             for _ in 0..<3 {
                 XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true AND hittable == true"), object: connect)], timeout: 30) == .completed)
                 connect.tap()
