@@ -219,7 +219,10 @@ public class NobiPhotoLibraryPlugin extends Plugin {
                 : "image/heic".equals(mime) ? "heic" : "image/heif".equals(mime) ? "heif"
                 : "image/avif".equals(mime) ? "avif" : null;
             if (extension == null) { call.reject("Unsupported original format", "ORIGINAL_FORMAT"); return; }
-            clearOriginals(); // One original at a time, independent of the thumbnail cache.
+            // Retain the visible original and its successor during the slide, never more than two.
+            if (originals.size() >= 2 || originals.containsKey(lease)) {
+                call.reject("Viewer original slots occupied", "ORIGINAL_BUSY"); return;
+            }
             File directory = viewerDirectory();
             if (!directory.isDirectory() && !directory.mkdirs()) { call.reject("Cache unavailable"); return; }
             File file = new File(directory, lease + "." + extension);

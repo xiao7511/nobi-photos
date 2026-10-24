@@ -63,44 +63,46 @@ try {
     }
   }
   assert.ok(browser)
-  const page = browser.contexts()[0].pages()[0]
+  const page = browser
+    .contexts()
+    .flatMap((c) => c.pages())
+    .find((p) => p.url().startsWith('https://localhost'))
+  assert.ok(page, 'No app WebView')
+  console.log('App page:', page.url())
   page.setDefaultTimeout(45000)
-  await page.waitForFunction(() => globalThis.Capacitor?.Plugins.NobiPhotoLibrary)
-  await page.evaluate(() => {
-    const Original = globalThis.AudioContext,
-      connect = globalThis.AudioNode.prototype.connect
-    globalThis.__nobiAudio = []
-    globalThis.AudioContext = class extends Original {
-      constructor(...args) {
-        super(...args)
-        this.__tap = this.createAnalyser()
-        this.__mute = this.createGain()
-        this.__mute.gain.value = 0
-        this.__tap.connect(this.__mute)
-        this.__mute.connect(this.destination)
-        globalThis.__nobiAudio.push(this)
-      }
-    }
-    globalThis.AudioNode.prototype.connect = function (destination, ...args) {
-      if (
-        destination instanceof globalThis.AudioDestinationNode &&
-        this.context.__tap &&
-        this !== this.context.__mute
+  await page
+    .waitForFunction(() => !!globalThis.Capacitor?.Plugins.NobiPhotoLibrary)
+    .catch(async (error) => {
+      console.log(
+        await page.evaluate(() => ({
+          cap: !!globalThis.Capacitor,
+          platform: globalThis.Capacitor?.getPlatform?.(),
+          plugins: Object.keys(globalThis.Capacitor?.Plugins || {}),
+          text: globalThis.document.body.textContent.slice(0, 300),
+        })),
       )
-        connect.call(this, this.context.__tap)
-      return connect.call(this, destination, ...args)
+      throw error
+    })
+  await page.evaluate(() => {
+    const Original = globalThis.Audio
+    globalThis.__nobiAudio = []
+    globalThis.Audio = function () {
+      const audio = new Original()
+      globalThis.__nobiAudio.push(audio)
+      return audio
     }
   })
   const sample = () =>
     page.evaluate(() => {
-      const last = globalThis.__nobiAudio.at(-1)
-      if (!last) return { count: 0, state: '', rms: 0 }
-      const values = new Float32Array(last.__tap.fftSize)
-      last.__tap.getFloatTimeDomainData(values)
+      const list = globalThis.__nobiAudio,
+        audio = list[list.length - 1]
       return {
-        count: globalThis.__nobiAudio.length,
-        state: last.state,
-        rms: Math.sqrt(values.reduce((sum, v) => sum + v * v, 0) / values.length),
+        count: list.length,
+        paused: audio?.paused,
+        src: audio?.getAttribute('src'),
+        time: audio?.currentTime ?? 0,
+        duration: audio?.duration ?? 0,
+        ready: audio?.readyState,
       }
     })
   await adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'enable')
@@ -133,7 +135,7 @@ try {
       Math.abs(bounds.width - globalThis.innerWidth) < 2
     )
   })
-  const geometry = await viewer.locator('img').evaluate((image) => ({
+  const geometry = await viewer.locator('img.is-current').evaluate((image) => ({
     viewport: { width: globalThis.innerWidth, height: globalThis.innerHeight },
     image: {
       width: image.getBoundingClientRect().width,
@@ -148,19 +150,68 @@ try {
   await page.screenshot({ path: join(output, 'fullscreen-original.png') })
   await viewer.getByRole('button', { name: '完整显示照片' }).click()
   assert.equal(
-    await viewer.locator('img').evaluate((image) => globalThis.getComputedStyle(image).objectFit),
+    await viewer
+      .locator('img.is-current')
+      .evaluate((image) => globalThis.getComputedStyle(image).objectFit),
     'contain',
   )
   await viewer.getByRole('button', { name: '铺满屏幕' }).click()
   assert.equal((await sample()).count, 0)
+  // The real PhotoKit/MediaStore bridge now safely retains two files, rejecting a third.
+  const fixtureRows = await adb(
+    'shell',
+    'content query --uri content://media/external/images/media --projection _id:_display_name',
+  )
+  const parrot = fixtureRows
+    .split('\n')
+    .find((row) => row.includes('_display_name=nobi_ai_reference_parrot.jpg'))
+  const assetId = parrot?.match(/_id=(\d+)/)?.[1]
+  assert.ok(assetId)
+  const overlap = await page.evaluate(async (assetId) => {
+    const plugin = globalThis.Capacitor.Plugins.NobiPhotoLibrary
+    const leaseId = globalThis.crypto.randomUUID(),
+      third = globalThis.crypto.randomUUID()
+    await plugin.original({ assetId, leaseId })
+    let thirdRejected = false
+    try {
+      await plugin.original({ assetId, leaseId: third })
+    } catch {
+      thirdRejected = true
+    }
+    return { leaseId, thirdRejected }
+  }, assetId)
+  assert.equal(overlap.thirdRejected, true)
+  assert.equal(
+    (await adb('shell', 'run-as', 'app.nobi.photos', 'ls', 'cache/nobi-viewer'))
+      .split('\n')
+      .filter(Boolean).length,
+    2,
+  )
+  await page.evaluate(
+    async (leaseId) => globalThis.Capacitor.Plugins.NobiPhotoLibrary.releaseOriginal({ leaseId }),
+    overlap.leaseId,
+  )
+  assert.equal(
+    (await adb('shell', 'run-as', 'app.nobi.photos', 'ls', 'cache/nobi-viewer'))
+      .split('\n')
+      .filter(Boolean).length,
+    1,
+  )
+  // Actual internet stream: no route interception, local replacement audio or API service.
+  await adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'disable')
+  await adb('shell', 'svc', 'wifi', 'enable')
+  await setTimeout(1500)
   await viewer.getByRole('button', { name: '开启分类配乐' }).click()
   let sound
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 100; i++) {
     sound = await sample()
-    if (sound.rms > 0.0001) break
-    await setTimeout(100)
+    if (sound.time > 0.5 && sound.duration > 30 && !sound.paused) break
+    await setTimeout(200)
   }
-  assert.ok(sound.rms > 0.0001 && sound.state === 'running', 'Real Web Audio samples required')
+  assert.ok(
+    sound.time > 0.5 && sound.duration > 30 && !sound.paused,
+    'Real artist-hosted MP3 must be decoded and progressing',
+  )
   const before = await viewer.locator('.viewer-count').innerText()
   await viewer.getByRole('button', { name: '开始自动轮播' }).click()
   await page.waitForFunction(
@@ -175,7 +226,8 @@ try {
   await page.screenshot({ path: join(output, 'slideshow-music.png') })
   await adb('shell', 'input', 'keyevent', '3')
   await setTimeout(1000)
-  assert.equal((await sample()).state, 'closed')
+  assert.equal((await sample()).src, null)
+  assert.equal((await sample()).paused, true)
   assert.equal(await adb('shell', 'run-as', 'app.nobi.photos', 'ls', 'cache/nobi-viewer'), '')
   await adb('shell', 'am', 'start', '-n', 'app.nobi.photos/.MainActivity')
   await page.waitForFunction(() => !globalThis.document.querySelector('.photo-viewer'))
@@ -187,15 +239,24 @@ try {
     .filter({ hasText: /^原图$/ })
     .waitFor()
   await viewer.getByRole('button', { name: '开启分类配乐' }).click()
-  await viewer.locator('.viewer-music-caption').filter({ hasText: '小小伙伴' }).waitFor()
+  await viewer.locator('.viewer-music-caption').filter({ hasText: 'Carefree' }).waitFor()
+  await page.waitForFunction(
+    () => {
+      const audio = globalThis.__nobiAudio[globalThis.__nobiAudio.length - 1]
+      return audio && !audio.paused && audio.currentTime > 0.5 && audio.duration > 30
+    },
+    undefined,
+    { timeout: 25000 },
+  )
   await viewer.getByRole('button', { name: '关闭照片详情' }).click()
-  assert.equal((await sample()).state, 'closed')
+  assert.equal((await sample()).src, null)
+  assert.equal((await sample()).paused, true)
   await writeFile(
     join(output, 'result.json'),
     JSON.stringify(
       {
         checkedAt: new Date().toISOString(),
-        version: '0.7.0',
+        version: '0.8.0',
         platform: 'Android 14 / API 34 dedicated AVD',
         fixturePhotos: names.length,
         geometry,
@@ -203,13 +264,13 @@ try {
         nativeBackToList: true,
         originalPixels: true,
         defaultSilent: true,
-        musicRms: sound.rms,
-        categoryMusic: ['日常小确幸', '小小伙伴'],
+        recording: sound,
+        nativeOverlap: overlap,
+        categoryMusic: ['Carefree', 'Carefree'],
         slideshowAdvanceAndPause: true,
         backgroundStopsAudioAndReleasesOriginal: true,
         closedViewerStopsAudio: true,
-        airplaneMode: true,
-        wifiDisabled: true,
+        offlinePhotosThenOptInInternetMusic: true,
         privatePhotos: false,
         status: 'passed',
       },
@@ -218,7 +279,7 @@ try {
     ),
   )
   console.log(
-    'Native fullscreen, AI/category album details, slideshow, real offline audio and lifecycle cleanup passed',
+    'Native fullscreen, AI/category album details, slideshow, real internet recording and lifecycle cleanup passed',
   )
 } finally {
   await browser?.close()

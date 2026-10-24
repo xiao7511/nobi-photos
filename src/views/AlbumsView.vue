@@ -112,7 +112,8 @@ const albums = computed(() =>
     <p v-if="library.loading" class="body-text" role="status">正在读取相册…</p>
     <template v-if="userAlbum || validCategory">
       <p class="album-music-note body-text">
-        轮播时可开启「{{ musicScores[theme].title }}」分类配乐，默认静音。
+        轮播时可联网播放「{{ musicScores[theme].title }}」· Kevin MacLeod（CC BY
+        4.0），按分类匹配，默认关闭。
       </p>
       <PhotoGrid ref="grid" :photos="visible" :music-theme="theme" />
     </template>

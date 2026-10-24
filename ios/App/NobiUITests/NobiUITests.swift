@@ -98,7 +98,7 @@ final class NobiUITests: XCTestCase {
         let music = app.webViews.switches["开启分类配乐"].firstMatch
         XCTAssertTrue(music.waitForExistence(timeout: 10))
         music.tap()
-        XCTAssertTrue(text("日常小确幸").waitForExistence(timeout: 15))
+        XCTAssertTrue(text("Carefree").waitForExistence(timeout: 15))
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label != %@", firstCounter), object: counter)], timeout: 20) == .completed)
         XCTAssertTrue(app.webViews.switches["关闭背景音乐"].firstMatch.exists)
         app.webViews.switches["暂停轮播"].firstMatch.tap()

@@ -1,6 +1,6 @@
 # iOS 开发、构建与验证
 
-版本 0.7.0 / build 8，bundle ID `app.nobi.photos`。iOS 原生工程使用 Capacitor 8、Swift Package Manager、本地 PhotoKit / SQLite 与 Apple Vision，无需注册或云端业务 API。
+版本 0.8.0 / build 9，bundle ID `app.nobi.photos`。iOS 原生工程使用 Capacitor 8、Swift Package Manager、本地 PhotoKit / SQLite 与 Apple Vision，无需注册或云端业务 API。
 
 ## 当前交付
 
@@ -51,3 +51,5 @@ xcodebuild -project ios/App/App.xcodeproj -scheme Nobi -configuration Debug -des
 当前没有可用 Mac 或 Apple 开发者团队，本轮不制作签名 IPA、不安装物理 iPhone、不上传 TestFlight / App Store。后续在有 Xcode 的 Mac 中设置自己的开发者 Team、唯一 bundle ID 与 provisioning profile，对 Release archive 签名导出，再按团队分发渠道安装。不要将证书私钥、账户密码、签名文件或 provisioning profile 提交到仓库。
 
 模拟器验证不能覆盖真机性能、能耗、真实相机图库规模、有限照片授权缩减或所有 iOS 版本。签名前还应补齐这些验收，并按实际发布功能填写 App Store 隐私信息。
+
+0.8.0 的照片仍离线处理；仅在主动开启分类配乐后播放官方 HTTPS 录音。原图轮播最多同时保留两个受保护、排除备份的临时文件，滑动结束后释放上一张。

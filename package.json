@@ -1,8 +1,8 @@
 {
   "name": "nobi-photos",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
-  "description": "NOBI Photos: fullscreen albums, offline slideshow and category music, Phase 7",
+  "description": "NOBI Photos: smooth album carousel and licensed online category music, Phase 8",
   "scripts": {
     "dev": "vite",
     "lint": "eslint . --max-warnings 0",

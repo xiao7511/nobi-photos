@@ -73,6 +73,6 @@ const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
   <div class="about-note">
     <img src="/favicon.svg" alt="" /><strong>NOBI Photos</strong>
     <p>照片留在本地，回忆自在生长。</p>
-    <span>v0.7.0 · {{ library.isNative ? 'Android / iOS 本地应用' : '浏览器示例预览' }}</span>
+    <span>v0.8.0 · {{ library.isNative ? 'Android / iOS 本地应用' : '浏览器示例预览' }}</span>
   </div>
 </template>

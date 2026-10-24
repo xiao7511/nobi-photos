@@ -1,61 +1,26 @@
 import type { Photo } from './models'
+// Original recordings from the composer's official CC BY 4.0 library, unmodified.
+const base = 'https://incompetech.com/music/royalty-free/'
+const recording = (title: string, isrc: string) => ({
+  title,
+  url: `${base}mp3-royaltyfree/${encodeURIComponent(title)}.mp3`,
+  page: `${base}index.html?isrc=${isrc}&Search=Search`,
+  artist: 'Kevin MacLeod',
+  license: 'CC BY 4.0',
+  licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+})
+const dream = recording('Dream Culture', 'USUAN1300046')
+const riley = recording('Life of Riley', 'USUAN1400054')
+const carefree = recording('Carefree', 'USUAN1400037')
+const stroll = recording('Long Stroll', 'USUAN1100174')
 export const musicScores = {
-  nature: {
-    title: '山林微风',
-    bpm: 64,
-    root: 60,
-    wave: 'sine',
-    melody: [12, 16, 19, 16, 14, 12, 7, 14],
-    chords: [0, 5, 9, 7],
-  },
-  travel: {
-    title: '向远方',
-    bpm: 92,
-    root: 62,
-    wave: 'triangle',
-    melody: [12, 14, 16, 19, 21, 19, 16, 14],
-    chords: [0, 7, 9, 5],
-  },
-  city: {
-    title: '城市漫步',
-    bpm: 84,
-    root: 57,
-    wave: 'triangle',
-    melody: [12, 15, 19, 22, 19, 15, 17, 19],
-    chords: [0, 5, 8, 7],
-  },
-  life: {
-    title: '日常小确幸',
-    bpm: 76,
-    root: 60,
-    wave: 'sine',
-    melody: [16, 19, 21, 19, 16, 14, 12, 7],
-    chords: [0, 9, 5, 7],
-  },
-  animals: {
-    title: '小小伙伴',
-    bpm: 104,
-    root: 65,
-    wave: 'triangle',
-    melody: [12, 19, 16, 19, 21, 16, 14, 12],
-    chords: [0, 5, 7, 0],
-  },
-  food: {
-    title: '午后咖啡',
-    bpm: 72,
-    root: 62,
-    wave: 'sine',
-    melody: [12, 16, 19, 23, 21, 19, 16, 14],
-    chords: [0, 5, 2, 7],
-  },
-  documents: {
-    title: '纸上时光',
-    bpm: 60,
-    root: 57,
-    wave: 'sine',
-    melody: [12, 15, 19, 15, 17, 15, 12, 7],
-    chords: [0, 8, 5, 7],
-  },
+  nature: { ...dream, mood: '自然 · 梦幻钢琴' },
+  travel: { ...riley, mood: '旅行 · 轻快吉他' },
+  city: { ...stroll, mood: '城市 · 爵士漫步' },
+  life: { ...carefree, mood: '生活 · 轻松日常' },
+  animals: { ...carefree, mood: '动物 · 活泼木琴' },
+  food: { ...stroll, mood: '美食 · 咖啡爵士' },
+  documents: { ...dream, mood: '文档 · 舒缓钢琴' },
 } as const
 export type MusicTheme = keyof typeof musicScores
 const categories: Record<Photo['category'], MusicTheme> = {
@@ -69,7 +34,8 @@ export function albumMusicTheme(albumId: string, photos: Photo[]): MusicTheme {
   const topic = albumId.startsWith('user:smart:') ? albumId.slice('user:smart:'.length) : ''
   if (Object.prototype.hasOwnProperty.call(musicScores, topic)) return topic as MusicTheme
   const category = albumId.startsWith('category:') ? albumId.slice(9) : ''
-  if (Object.prototype.hasOwnProperty.call(categories, category)) return categories[category as Photo['category']]
+  if (Object.prototype.hasOwnProperty.call(categories, category))
+    return categories[category as Photo['category']]
   const votes = new Map<MusicTheme, number>()
   for (const photo of photos) {
     const theme = categories[photo.category]

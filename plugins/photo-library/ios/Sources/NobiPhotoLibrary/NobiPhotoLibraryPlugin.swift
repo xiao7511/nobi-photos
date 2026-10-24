@@ -216,10 +216,15 @@ public class NobiPhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             guard ["jpg", "jpeg", "png", "heic", "heif", "webp", "gif", "avif"].contains(ext) else {
                 call.reject("Unsupported original format", "ORIGINAL_FORMAT"); return
             }
-            self.clearOriginals()
+            // Keep the visible original until its successor has completed the slide.
+            guard self.originals.count < 2, self.originals[lease] == nil else {
+                call.reject("Viewer original slots occupied", "ORIGINAL_BUSY"); return
+            }
+            var pendingURL: URL?
             do {
                 try FileManager.default.createDirectory(at: self.viewerDirectory, withIntermediateDirectories: true)
                 var url = self.viewerDirectory.appendingPathComponent(lease + "." + ext)
+                pendingURL = url
                 guard FileManager.default.createFile(atPath: url.path, contents: nil, attributes: [.protectionKey: FileProtectionType.complete]) else {
                     call.reject("Cache unavailable"); return
                 }
@@ -255,7 +260,8 @@ public class NobiPhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                     }
                 })
             } catch {
-                self.clearOriginals()
+                self.release(lease)
+                if let url = pendingURL { try? FileManager.default.removeItem(at: url) }
                 call.reject("Local original unavailable", "ORIGINAL_UNAVAILABLE")
             }
         }

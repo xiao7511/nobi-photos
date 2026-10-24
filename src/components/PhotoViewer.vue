@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import {
   X,
   Heart,
@@ -18,7 +18,6 @@ import {
 import { SystemBars } from '@capacitor/core'
 import type { Photo } from '../domain/models'
 import { useLibrary } from '../stores/library'
-import { localPreview } from '../services/localPreview'
 import { originalPhoto } from '../services/originalPhoto'
 import TagEditor from './TagEditor.vue'
 import { AlbumMusic } from '../services/albumMusic'
@@ -36,9 +35,7 @@ const id = ref(props.initialId),
   stage = ref<HTMLElement>()
 const photo = computed(() => props.photos.find((p) => p.id === id.value))
 const index = computed(() => props.photos.findIndex((p) => p.id === id.value))
-const source = ref(''),
-  originalSource = ref(''),
-  status = ref(''),
+const status = ref(''),
   error = ref('')
 const zoom = ref(1),
   details = ref(false),
@@ -49,15 +46,16 @@ const fill = ref(true),
   ready = ref(false),
   playing = ref(!!props.autoplay)
 const viewport = ref({ width: window.innerWidth, height: window.innerHeight })
+const musicDetails = ref(false)
 const musicOn = ref(false),
-  musicError = ref('')
+  musicError = ref(''),
+  musicLoading = ref(false)
 const music = new AlbumMusic(() => {
   musicOn.value = false
+  musicLoading.value = false
   musicError.value = '配乐已暂停，请点击重新开启。'
 })
-const theme = computed(
-  () => props.musicTheme ?? albumMusicTheme('', photo.value ? [photo.value] : []),
-)
+const theme = computed(() => props.musicTheme ?? albumMusicTheme('', props.photos))
 let slideTimer: ReturnType<typeof setTimeout> | undefined
 let musicRequest = 0,
   ended = false
@@ -86,13 +84,14 @@ function schedule() {
     details.value ||
     zoom.value > 1 ||
     props.photos.length < 2 ||
-    ended
+    ended ||
+    loading.value
   )
     return
   slideTimer = setTimeout(() => {
     if (!document.hidden && playing.value) {
       const next = props.photos[(index.value + 1) % props.photos.length]
-      if (next) id.value = next.id
+      if (next) void load(next, 1)
     }
   }, 5000)
 }
@@ -105,19 +104,23 @@ function togglePlayback() {
 function stopMusic() {
   ++musicRequest
   musicOn.value = false
+  musicLoading.value = false
   music.stop()
 }
 async function startMusic() {
   const request = ++musicRequest
   musicError.value = ''
   musicOn.value = true
+  musicLoading.value = true
   try {
     await music.play(theme.value)
   } catch {
     if (request === musicRequest && !ended) {
       musicOn.value = false
-      musicError.value = '配乐未能播放，请检查媒体音量后重试。'
+      musicError.value = '在线音乐暂不可用，请检查网络后重试；照片轮播可继续使用。'
     }
+  } finally {
+    if (request === musicRequest) musicLoading.value = false
   }
 }
 function toggleMusic() {
@@ -128,24 +131,43 @@ function toggleDetails() {
   details.value = !details.value
   if (details.value) playing.value = false
 }
+function toggleControls() {
+  controls.value = !controls.value
+  stage.value?.focus()
+}
 function toggleFit() {
   fill.value = !fill.value
   zoom.value = 1
 }
+interface Frame {
+  token: number
+  photo: Photo
+  source: string
+  original: boolean
+  controller: AbortController
+  release: () => Promise<void>
+}
+const frames = shallowRef<Frame[]>([])
+const originalSource = computed(() => (frames.value[0]?.original ? frames.value[0].source : ''))
+const loading = ref(false),
+  sliding = ref(false),
+  direction = ref(1)
 let controller: AbortController | undefined
-let release: (() => Promise<void>) | undefined
-let version = 0
+let version = 0,
+  token = 0
+async function retire(frame: Frame) {
+  frame.controller.abort()
+  await frame.release().catch(() => {})
+}
 function dispose() {
   clearTimeout(slideTimer)
   ready.value = false
   ++version
   controller?.abort()
   controller = undefined
-  const cleanup = release
-  release = undefined
-  void cleanup?.().catch(() => {})
-  source.value = ''
-  originalSource.value = ''
+  for (const frame of frames.value) void retire(frame)
+  frames.value = []
+  loading.value = false
 }
 function close() {
   ended = true
@@ -155,75 +177,154 @@ function close() {
   dialog.value?.close()
   emit('close')
 }
-async function load() {
-  dispose()
-  const current = photo.value
-  if (!current) return
-  const request = version
-  controller = new AbortController()
-  const signal = controller.signal
+function decode(source: string, signal: AbortSignal): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    let settled = false
+    const finish = (error?: Error) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      signal.removeEventListener('abort', abort)
+      image.onload = image.onerror = null
+      if (error) {
+        image.src = ''
+        reject(error)
+      } else resolve(image)
+    }
+    const abort = () => finish(new Error('已取消'))
+    const timer = setTimeout(() => finish(new Error('原图解码超时')), 30000)
+    signal.addEventListener('abort', abort, { once: true })
+    image.onerror = () => finish(new Error('原图格式不可读'))
+    image.onload = () => {
+      // Decode before mounting the successor; the current image stays painted throughout.
+      image.decode().then(
+        () => finish(),
+        () => finish(new Error('原图解码失败')),
+      )
+    }
+    image.src = source
+    if (signal.aborted) abort()
+  })
+}
+async function slide(signal: AbortSignal) {
+  await nextTick()
+  if (signal.aborted) return
+  stage.value?.getBoundingClientRect() // Commit the incoming off-screen position before moving it.
+  sliding.value = true
+  await new Promise<void>((resolve) => {
+    const done = () => {
+      clearTimeout(timer)
+      signal.removeEventListener('abort', done)
+      resolve()
+    }
+    const timer = setTimeout(
+      done,
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 720,
+    )
+    signal.addEventListener('abort', done, { once: true })
+  })
+}
+async function load(target: Photo | undefined = photo.value, offset = 1) {
+  if (!target || loading.value || ended) return
+  clearTimeout(slideTimer)
+  loading.value = true
+  const request = ++version
+  const pending = new AbortController()
+  controller = pending
+  const signal = pending.signal
+  const previous = frames.value[0]
+  if (!previous)
+    frames.value = [
+      {
+        token: ++token,
+        photo: target,
+        source: target.thumbnail,
+        original: false,
+        controller: new AbortController(),
+        release: async () => {},
+      },
+    ]
   zoom.value = 1
   details.value = false
   error.value = ''
-  status.value = '正在读取原图…'
-  source.value = current.thumbnail
-  void localPreview(current)
-    .then((preview) => {
-      if (request === version && !originalSource.value) source.value = preview
-    })
-    .catch(() => {})
+  status.value = previous?.original ? '正在读取下一张…' : '正在读取原图…'
+  let incoming: Frame | undefined
   try {
-    const result = await originalPhoto(current, signal)
+    const result = await originalPhoto(target, signal)
+    incoming = {
+      token: ++token,
+      photo: target,
+      source: result.source,
+      original: true,
+      controller: pending,
+      release: result.release,
+    }
+    const image = await decode(result.source, signal)
     if (request !== version || signal.aborted) {
-      await result.release()
+      await retire(incoming)
       return
     }
-    release = result.release
-    originalSource.value = result.source
-    source.value = result.source
+    direction.value = offset < 0 ? -1 : 1
+    if (previous?.original && previous.photo.id !== target.id) {
+      frames.value = [previous, incoming]
+      await slide(signal)
+    }
+    if (request !== version || signal.aborted) {
+      await retire(incoming)
+      return
+    }
+    if (!props.photos.some((p) => p.id === target.id)) throw new Error('照片已不可用')
+    frames.value = [incoming]
+    sliding.value = false
+    id.value = target.id
+    naturalWidth.value = image.naturalWidth
+    naturalHeight.value = image.naturalHeight
+    status.value = target.source === 'device' ? '原图' : '示例插画'
+    ready.value = true
+    if (previous) await retire(previous)
   } catch {
-    if (request !== version) return
-    status.value = ''
+    const cancelled = request !== version || signal.aborted
+    if (incoming) await retire(incoming)
+    if (cancelled) return
+    frames.value = previous ? [previous] : frames.value.filter((f) => !f.original)
+    sliding.value = false
     playing.value = false
-    error.value = '原图暂不可读：请确认照片已在本机、格式受支持且已授权。超大照片请使用系统相册。'
+    status.value = previous?.original
+      ? previous.photo.source === 'device'
+        ? '原图'
+        : '示例插画'
+      : ''
+    error.value = '下一张原图暂不可读，请确认照片在本机且已授权。当前照片已保留。'
+  } finally {
+    if (request === version) {
+      loading.value = false
+      controller = undefined
+      schedule()
+    }
   }
 }
-function loaded(event: Event) {
-  const image = event.target as HTMLImageElement
-  if (!originalSource.value || image.getAttribute('src') !== originalSource.value) return
-  naturalWidth.value = image.naturalWidth
-  naturalHeight.value = image.naturalHeight
-  status.value = photo.value?.source === 'device' ? '原图' : '示例插画'
-  ready.value = true
-  schedule()
-}
-function failed(event: Event) {
-  if (
-    !originalSource.value ||
-    (event.target as HTMLImageElement).getAttribute('src') !== originalSource.value
-  )
-    return
-  originalSource.value = ''
-  playing.value = false
-  ready.value = false
-  status.value = ''
-  error.value = '当前设备无法显示此原图格式，请使用系统相册。'
-  const current = photo.value
-  const request = version
-  if (current)
-    void localPreview(current)
-      .then((preview) => {
-        if (request === version && photo.value?.id === current.id) source.value = preview
-      })
-      .catch(() => {})
-  void release?.().catch(() => {})
-  release = undefined
+function frameStyle(position: number) {
+  const x =
+    position === 0
+      ? sliding.value
+        ? -direction.value * 100
+        : 0
+      : sliding.value
+        ? 0
+        : direction.value * 100
+  return {
+    ...(zoom.value > 1 ? zoomSize.value : {}),
+    objectFit: fill.value ? ('cover' as const) : ('contain' as const),
+    transform: `translateX(${x}%)`,
+  }
 }
 function move(offset: number) {
   const next = props.photos[index.value + offset]
-  if (next) id.value = next.id
+  if (next) void load(next, offset)
 }
 async function setZoom(value: number) {
+  if (loading.value) return
   if (value > 1 && (!originalSource.value || status.value === '正在读取原图…')) return
   zoom.value = value
   if (value > 1) playing.value = false
@@ -267,9 +368,7 @@ watch(
   () => photo.value?.id,
   (value) => {
     if (!value) close()
-    else void load()
   },
-  { immediate: true },
 )
 watch([playing, details, zoom, () => props.photos.length], schedule)
 watch(theme, () => {
@@ -277,6 +376,7 @@ watch(theme, () => {
 })
 onMounted(() => {
   resize()
+  void load()
   dialog.value?.showModal()
   document.documentElement.classList.add('viewer-open')
   window.addEventListener('resize', resize)
@@ -358,27 +458,28 @@ onUnmounted(() => {
         tabindex="0"
         :class="{ zoomed: zoom > 1 }"
         :data-fit="fill ? 'cover' : 'contain'"
-        @click="controls = !controls; stage?.focus()"
+        @click="toggleControls"
         @touchstart.passive="start"
         @touchend.passive="end"
         @dblclick="setZoom(zoom === 1 ? 2 : 1)"
       >
         <img
-          :key="source + ':' + !!originalSource"
+          v-for="(frame, position) in frames"
+          :key="frame.token"
           class="viewer-image"
-          :src="source || undefined"
-          :alt="photo.title"
-          :style="zoom > 1 ? zoomSize : { objectFit: fill ? 'cover' : 'contain' }"
+          :class="{ 'is-current': position === 0, 'is-sliding': sliding }"
+          :aria-hidden="position !== 0"
+          :src="frame.source || undefined"
+          :alt="position === 0 ? frame.photo.title : ''"
+          :style="frameStyle(position)"
           draggable="false"
-          @load="loaded"
-          @error="failed"
         />
       </div>
       <footer v-show="controls || details" class="viewer-toolbar viewer-bottom">
         <button
           class="viewer-button"
           aria-label="上一张照片"
-          :disabled="index <= 0"
+          :disabled="loading || index <= 0"
           @click="move(-1)"
         >
           <ChevronLeft :size="24" />
@@ -395,7 +496,7 @@ onUnmounted(() => {
         <button
           class="viewer-button"
           aria-label="下一张照片"
-          :disabled="index >= photos.length - 1"
+          :disabled="loading || index >= photos.length - 1"
           @click="move(1)"
         >
           <ChevronRight :size="24" />
@@ -411,18 +512,46 @@ onUnmounted(() => {
         <button
           class="viewer-button"
           :aria-label="zoom > 1 ? '适应屏幕' : '放大照片'"
-          :disabled="!originalSource || status === '正在读取原图…'"
+          :disabled="loading || !originalSource || status === '正在读取原图…'"
           @click="setZoom(zoom > 1 ? 1 : 2)"
         >
           <ZoomOut v-if="zoom > 1" :size="21" /><ZoomIn v-else :size="21" />
         </button>
       </footer>
       <p v-if="musicOn && controls" class="viewer-music-caption" role="status">
-        {{ musicScores[theme].title }} · 分类配乐
+        {{ musicLoading ? '正在连接… ' : '' }}{{ musicScores[theme].title }} · Kevin MacLeod · CC BY
+        4.0
+        <button class="music-info-button" @click="musicDetails = !musicDetails">曲目来源</button>
       </p>
+      <section v-if="musicDetails" class="viewer-details" aria-label="配乐来源与授权">
+        <div class="viewer-details-title">
+          <h2>在线分类配乐</h2>
+          <button class="icon-button" aria-label="收起配乐信息" @click="musicDetails = false">
+            <X :size="20" />
+          </button>
+        </div>
+        <p>{{ musicScores[theme].mood }}</p>
+        <p>
+          '{{ musicScores[theme].title }}' — Kevin MacLeod (incompetech.com) — Licensed under
+          Creative Commons: By Attribution 4.0.
+        </p>
+        <p>
+          原版录音，未作改编。默认关闭；仅播放时请求音乐，可能使用移动流量。音乐提供方可收到 IP
+          与设备请求信息，照片、文件名与相册标题不发送。
+        </p>
+        <p>
+          <a :href="musicScores[theme].page" target="_blank" rel="noopener noreferrer"
+            >incompetech.com · 原曲页面</a
+          >
+          ·
+          <a :href="musicScores[theme].licenseUrl" target="_blank" rel="noopener noreferrer"
+            >CC BY 4.0 许可</a
+          >
+        </p>
+      </section>
       <div v-if="musicError" class="viewer-error" role="alert">{{ musicError }}</div>
       <div v-if="error" class="viewer-error" role="alert">
-        {{ error }} <button @click="load">重试</button>
+        {{ error }} <button @click="load()">重试</button>
       </div>
       <section v-if="details" class="viewer-details" aria-label="照片标签">
         <div class="viewer-details-title">
